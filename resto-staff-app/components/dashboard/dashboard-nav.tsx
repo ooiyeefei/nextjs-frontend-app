@@ -10,7 +10,7 @@ export function DashboardNav() {
 
   const navigation = [
     {
-      name: "Overview",
+      name: "Dashboard",
       href: "/dashboard",
       icon: Home,
     },
