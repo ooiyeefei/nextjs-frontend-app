@@ -1,6 +1,33 @@
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient, type CookieOptions } from "@supabase/ssr"
+import { cookies } from "next/headers"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
+export const createClient = (cookieStore: ReturnType<typeof cookies>) => {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        async get(name: string) {
+          return (await cookieStore).get(name)?.value
+        },
+        async set(name: string, value: string, options: CookieOptions) {
+          try {
+            (await cookieStore).set({ name, value, ...options })
+          } catch (error) {
+            console.error(error)
+          }
+        },
+        async remove(name: string, options: CookieOptions) {
+          try {
+            (await cookieStore).set({ name, value: "", ...options })
+          } catch (error) {
+            console.error(error)
+          }
+        },
+      },
+    }
+  )
+}
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Export a default instance
+export const supabase = createClient(cookies())
