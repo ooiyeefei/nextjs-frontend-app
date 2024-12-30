@@ -1,86 +1,118 @@
 "use client"
 
-import { useState } from "react"
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../ui/table"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select"
+import { useEffect, useState } from "react"
+import { getReservations, updateReservationStatus } from "@/lib/supabase/queries"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { Badge } from "../ui/badge"
 
-type Status = 'reaching-soon' | 'late' | 'no-show' | 'confirmed' | 'seated'
-
-interface Reservation {
-  id: string
-  customerName: string
-  date: string
-  time: string
-  partySize: number
-  status: Status
-  specialRequests?: string
-  dietaryRestrictions?: string
-}
+type Status = 'arriving-soon' | 'late' | 'no-show' | 'confirmed' | 'seated' | 'completed'
 
 const statusColors: Record<Status, string> = {
-  'reaching-soon': 'bg-yellow-500/10 text-yellow-500',
-  'late': 'bg-red-500/10 text-red-500',
-  'no-show': 'bg-gray-500/10 text-gray-500',
-  'confirmed': 'bg-blue-500/10 text-blue-500',
-  'seated': 'bg-green-500/10 text-green-500',
+  'arriving-soon': '!bg-yellow-500/10 !text-yellow-500',
+  'late': '!bg-red-500/10 !text-red-500',
+  'no-show': '!bg-gray-500/10 !text-gray-500',
+  'confirmed': '!bg-blue-500/10 !text-blue-500',
+  'seated': '!bg-green-500/10 !text-green-500',
+  'completed': '!bg-green-500/10 !text-green-500',
 }
 
-const initialReservations: Reservation[] = [
-  {
-    id: "1",
-    customerName: "John Doe",
-    date: "2024-01-15",
-    time: "19:00",
-    partySize: 4,
-    status: "confirmed",
-    specialRequests: "Window seat",
-    dietaryRestrictions: "Nut allergy",
-  },
-  {
-    id: "2",
-    customerName: "Jane Smith",
-    date: "2024-01-15",
-    time: "20:30",
-    partySize: 2,
-    status: "reaching-soon",
-    dietaryRestrictions: "Vegetarian",
-  },
-  {
-    id: "3",
-    customerName: "Bob Johnson",
-    date: "2024-01-15",
-    time: "18:00",
-    partySize: 6,
-    status: "seated",
-    specialRequests: "Birthday celebration",
-  },
-]
+
+interface Customer {
+  id: string
+  name: string
+  email: string
+  phone: string
+  total_visits: number
+  joined_date: string
+  reservation_id: string | null
+}
+
+interface Reservation {
+  reservation_id: string
+  reservation_time: string
+  customer_email: string
+  phone: string
+  status: Status
+  special_requests: string | null
+  dietary_restrictions: string | null
+  party_size: number
+  customers: {
+    name: string
+    email: string
+  } | null
+}
+
+const StatusBadge = ({ status }: { status: Status }) => (
+  <Badge 
+    className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${statusColors[status]}`}
+  >
+    {status}
+  </Badge>
+)
+
 
 export function ReservationsTab() {
-  const [reservations, setReservations] = useState<Reservation[]>(initialReservations)
+  const [reservations, setReservations] = useState<Reservation[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleStatusChange = (id: string, newStatus: Status) => {
-    setReservations(prev =>
-      prev.map(reservation =>
-        reservation.id === id ? { ...reservation, status: newStatus } : reservation
-      )
-    )
+  useEffect(() => {
+    fetchReservations()
+  }, [])
+
+  const fetchReservations = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      const data = await getReservations()
+      
+      const transformedData = data.map(reservation => ({
+        ...reservation,
+        customers: reservation.customers || null
+      }))
+      
+      console.log('Transformed data:', transformedData)
+      setReservations(transformedData)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+      console.error('Error fetching reservations:', err)
+    } finally {
+      setIsLoading(false)
+    }
   }
+
+  const handleStatusChange = async (id: string, newStatus: Status) => {
+    try {
+      console.log('🔄 Status change requested:', {
+        id,
+        newStatus,
+        currentStatus: reservations.find(r => r.reservation_id === id)?.status
+      })
+  
+      await updateReservationStatus(id, newStatus)
+      
+      setReservations(prevReservations => 
+        prevReservations.map(reservation => 
+          reservation.reservation_id === id 
+            ? { ...reservation, status: newStatus }
+            : reservation
+        )
+      )
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
+      console.error('❌ Status update failed:', {
+        error: errorMessage,
+        reservationId: id,
+        attemptedStatus: newStatus,
+        timestamp: new Date().toISOString()
+      })
+      setError(errorMessage)
+    }
+  }
+
+  if (isLoading) return <div>Loading...</div>
+  if (error) return <div className="text-red-500">Error: {error}</div>
 
   return (
     <Table>
@@ -88,8 +120,9 @@ export function ReservationsTab() {
       <TableHeader>
         <TableRow>
           <TableHead>Customer Name</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead>Time</TableHead>
+          <TableHead>Email</TableHead>
+          <TableHead>Phone</TableHead>
+          <TableHead>Date & Time</TableHead>
           <TableHead>Party Size</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Special Requests</TableHead>
@@ -98,40 +131,39 @@ export function ReservationsTab() {
       </TableHeader>
       <TableBody>
         {reservations.map((reservation) => (
-          <TableRow key={reservation.id}>
-            <TableCell>{reservation.customerName}</TableCell>
-            <TableCell>{reservation.date}</TableCell>
-            <TableCell>{reservation.time}</TableCell>
-            <TableCell>{reservation.partySize}</TableCell>
+          <TableRow key={reservation.reservation_id}>
+            <TableCell>{reservation.customers?.name || '-'}</TableCell>
+            <TableCell>{reservation.customer_email}</TableCell>
+            <TableCell>{reservation.phone}</TableCell>
+            <TableCell>{new Date(reservation.reservation_time).toLocaleString()}</TableCell>
+            <TableCell>{reservation.party_size}</TableCell>
             <TableCell>
               <Select
                 value={reservation.status}
-                onValueChange={(value: Status) => handleStatusChange(reservation.id, value)}
+                onValueChange={(value: Status) => {
+                  console.log('Selected reservation ID:', reservation.reservation_id) // Debug log
+                  handleStatusChange(reservation.reservation_id, value)
+                }}
               >
                 <SelectTrigger className="w-[140px]">
                   <SelectValue>
-                    <Badge className={statusColors[reservation.status]}>
-                      {reservation.status}
-                    </Badge>
+                    <StatusBadge status={reservation.status} />
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {Object.entries(statusColors).map(([status, colorClass]) => (
                     <SelectItem key={status} value={status}>
-                      <Badge className={colorClass}>
-                        {status}
-                      </Badge>
+                      <StatusBadge status={status as Status} />
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </TableCell>
-            <TableCell>{reservation.specialRequests || '-'}</TableCell>
-            <TableCell>{reservation.dietaryRestrictions || '-'}</TableCell>
+            <TableCell>{reservation.special_requests || '-'}</TableCell>
+            <TableCell>{reservation.dietary_restrictions || '-'}</TableCell>
           </TableRow>
         ))}
       </TableBody>
     </Table>
   )
 }
-

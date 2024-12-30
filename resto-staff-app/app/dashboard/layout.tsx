@@ -1,15 +1,18 @@
-import { DashboardNav } from "@/components/dashboard/dashboard-nav"
+import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 
 export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen">
-      <DashboardNav />
-      <main className="flex-1 p-8 bg-background">{children}</main>
+    <div className="flex h-screen overflow-hidden">
+      <div className="fixed">
+        <DashboardNav />
+      </div>
+      <main className="flex-1 overflow-y-auto ml-64 p-8">
+        {children}
+      </main>
     </div>
-  )
+  );
 }
-

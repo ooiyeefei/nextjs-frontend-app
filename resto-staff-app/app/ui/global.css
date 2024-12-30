@@ -56,3 +56,60 @@
     @apply bg-background text-foreground;
   }
 }
+
+.dialog {
+  position: fixed;
+  inset: 0;
+  display: none;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 50;
+}
+
+.dialog.open {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dialog-content {
+  background: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  max-width: 500px;
+  width: 90%;
+}
+
+.calendar-container {
+  max-width: 100%;
+  overflow-x: visible;
+}
+
+@media (max-width: 640px) {
+  .calendar {
+    font-size: 0.875rem;
+    width: 100%;
+    max-width: 280px;
+  }
+}
+
+.dark input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+/* For Firefox */
+.dark input[type="time"]::-moz-clock-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.table-container {
+  @apply rounded-md border;
+}
+
+.table-row-hover {
+  @apply transition-all duration-200;
+}
+
+.table-cell-hover {
+  @apply relative overflow-hidden;
+}

@@ -4,7 +4,7 @@ interface Reservation {
     id: string;
     customer_name: string;
     reservation_time: string; // Use string for timestamp
-    status: string; // Restrict values if needed (e.g., 'coming soon', 'late', etc.)
+    status: string; // Restrict values if needed (e.g., 'arriving-soon', 'late', etc.)
   }
 
 function Reservations() {

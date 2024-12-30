@@ -22,7 +22,7 @@ export default function LoginForm() {
     
     try {
       setLoading(true);
-      const { data, error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
@@ -30,6 +30,7 @@ export default function LoginForm() {
       });
       
       if (error) throw error;
+      setEmailSent(true);
       setMessage('Check your email for the login link!');
     } catch (error) {
       setMessage('Error sending magic link');
@@ -37,6 +38,7 @@ export default function LoginForm() {
       setLoading(false);
     }
   };
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900">
