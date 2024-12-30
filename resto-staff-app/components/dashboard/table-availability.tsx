@@ -29,6 +29,7 @@ export function TableAvailability({
       const newAvailability: TableAvailability = {
         tableTypeId: tableTypes[0].id,
         quantity: 1,
+        tableTypeName: ""
       }
       onAvailabilityChange([...availabilities, newAvailability])
     }
