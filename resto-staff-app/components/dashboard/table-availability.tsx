@@ -71,6 +71,8 @@ export function TableAvailability({
           <div className="flex-1">
             <Label className="text-sm">Table Type</Label>
             <select
+              id={`table-type-${index}`}
+              name={`table-type-${index}`}
               className="w-full h-10 px-3 rounded-md border border-input bg-background"
               value={availability.tableTypeId}
               onChange={(e) => updateTableAvailability(index, 'tableTypeId', e.target.value)}
@@ -85,6 +87,8 @@ export function TableAvailability({
           <div className="w-24">
             <Label className="text-sm">Quantity</Label>
             <Input
+              id={`quantity-${index}`}
+              name={`quantity-${index}`}
               type="number"
               min="1"
               value={availability.quantity}

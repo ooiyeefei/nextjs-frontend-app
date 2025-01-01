@@ -193,6 +193,8 @@ export function DateSpecificSchedule() {
                 <div key={index} className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <Input
+                      id={`date-time-start-${index}`}
+                      name={`date-time-start-${index}`}
                       type="time"
                       value={slot.start}
                       onChange={(e) =>
@@ -202,6 +204,8 @@ export function DateSpecificSchedule() {
                     />
                     <span>-</span>
                     <Input
+                      id={`date-time-end-${index}`}
+                      name={`date-time-end-${index}`}
                       type="time"
                       value={slot.end}
                       onChange={(e) =>

@@ -71,7 +71,8 @@ export function TableCapacitySettings() {
               <div>
                 <Label htmlFor={`name-${table.id}`}>Table Name</Label>
                 <Input
-                  id={`name-${table.id}`}
+                  id={`table-name-${table.id}`}
+                  name={`table-name-${table.id}`}
                   value={table.name}
                   onChange={(e) => updateTableType(table.id, 'name', e.target.value)}
                   placeholder="e.g., Window Table"
@@ -80,7 +81,8 @@ export function TableCapacitySettings() {
               <div>
                 <Label htmlFor={`seats-${table.id}`}>Number of Seats</Label>
                 <Input
-                  id={`seats-${table.id}`}
+                  id={`table-seats-${table.id}`}
+                  name={`table-seats-${table.id}`}
                   type="number"
                   min="1"
                   value={table.seats}

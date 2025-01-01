@@ -137,6 +137,8 @@ export function WeeklySchedule() {
                       <div key={index} className="space-y-4">
                         <div className="flex items-center space-x-2">
                           <Input
+                            id={`time-start-${day}-${index}`}
+                            name={`time-start-${day}-${index}`}
                             type="time"
                             value={slot.start}
                             onChange={(e) => updateTimeSlot(day, index, 'start', e.target.value)}
@@ -144,6 +146,8 @@ export function WeeklySchedule() {
                           />
                           <span>-</span>
                           <Input
+                            id={`time-end-${day}-${index}`}
+                            name={`time-end-${day}-${index}`}
                             type="time"
                             value={slot.end}
                             onChange={(e) => updateTimeSlot(day, index, 'end', e.target.value)}
