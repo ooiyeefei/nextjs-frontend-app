@@ -1,13 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Plus, X } from 'lucide-react'
 import { toast } from "../ui/toast"
-import { updateTableTypes } from "@/lib/supabase/queries"
+import { getTableTypes, updateTableTypes } from "@/lib/supabase/queries"
 
 export interface TableType {
   id: string
@@ -16,14 +16,36 @@ export interface TableType {
 }
 
 export function TableCapacitySettings() {
-  const [tableTypes, setTableTypes] = useState<TableType[]>([
-    { id: '1', name: 'Window Table', seats: 2 },
-    { id: '2', name: 'Regular Table', seats: 4 },
-    { id: '3', name: 'Family Table', seats: 6 },
-  ])
+  const [tableTypes, setTableTypes] = useState<TableType[]>([])
+
+  useEffect(() => {
+    async function fetchTableTypes() {
+      try {
+        const types = await getTableTypes()
+        if (types.length === 0) {
+          toast({
+            title: "No Tables Found",
+            description: "Please add table types for your restaurant",
+            variant: "destructive"
+          })
+        }
+        setTableTypes(types)
+      } catch (error) {
+        console.error('Failed to load table types:', error)
+        toast({
+          title: "Error",
+          description: "Failed to load table types from database",
+          variant: "destructive"
+        })
+        setTableTypes([]) // Reset to empty array on error
+      }
+    }
+    fetchTableTypes()
+  }, [])
 
   const addTableType = () => {
-    const id = (Math.max(...tableTypes.map(t => parseInt(t.id))) + 1).toString()
+    const id = tableTypes.length === 0 ? '1' : 
+      (Math.max(...tableTypes.map(t => parseInt(t.id))) + 1).toString()
     setTableTypes([...tableTypes, { id, name: '', seats: 2 }])
   }
 

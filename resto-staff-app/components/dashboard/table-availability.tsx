@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label"
 import { TableType } from "./table-capacity-settings"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Plus, X } from 'lucide-react'
+import { useEffect } from "react"
 
 interface TableAvailability {
   tableTypeId: string;
@@ -24,28 +25,43 @@ export function TableAvailability({
   availabilities,
   onAvailabilityChange,
 }: TableAvailabilityProps) {
+  useEffect(() => {
+    console.log('TableAvailability props:', {
+      tableTypesLength: tableTypes?.length,
+      availabilitiesLength: availabilities?.length,
+      hasOnAvailabilityChange: !!onAvailabilityChange
+    });
+  }, [tableTypes, availabilities, onAvailabilityChange]);
+  
   const addTableAvailability = () => {
-    if (tableTypes.length > 0) {
-      const newAvailability: TableAvailability = {
-        tableTypeId: tableTypes[0].id,
-        quantity: 1,
-        tableTypeName: ""
-      }
-      onAvailabilityChange([...availabilities, newAvailability])
+    console.log('Add Table clicked');
+    console.log('Current tableTypes:', tableTypes);
+    console.log('Current availabilities:', availabilities);
+    if (!tableTypes || tableTypes.length === 0) {
+      console.warn('No table types available');
+      return;
     }
-  }
+    const newAvailability = {
+      tableTypeId: tableTypes[0].id,
+      quantity: 1,
+      tableTypeName: tableTypes[0].name
+    };
+    onAvailabilityChange([...availabilities, newAvailability]);
+  };
+  
 
   const removeTableAvailability = (index: number) => {
     onAvailabilityChange(availabilities.filter((_, i) => i !== index))
   }
 
   const updateTableAvailability = (index: number, field: keyof TableAvailability, value: any) => {
-    onAvailabilityChange(
-      availabilities.map((avail, i) =>
-        i === index ? { ...avail, [field]: value } : avail
-      )
-    )
-  }
+    const newAvailabilities = [...availabilities];
+    newAvailabilities[index] = {
+      ...newAvailabilities[index],
+      [field]: value
+    };
+    onAvailabilityChange(newAvailabilities);
+  };  
 
   return (
     <div className="space-y-2 pl-4 border-l-2 border-muted">
