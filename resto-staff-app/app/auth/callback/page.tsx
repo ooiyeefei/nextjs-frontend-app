@@ -49,12 +49,19 @@ export default function AuthCallback() {
         // Handle hash fragment
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
-        
-        if (accessToken) {
+        const refreshToken = hashParams.get('refresh_token');
+
+        if (accessToken && refreshToken) {
+          // Set session with Supabase
           await supabase.auth.setSession({
             access_token: accessToken,
-            refresh_token: hashParams.get('refresh_token') || '',
+            refresh_token: refreshToken,
           });
+
+          // Clean up URL by removing the hash fragment
+          window.history.replaceState(null, "", window.location.pathname);
+
+          // Redirect to dashboard
           router.replace('/dashboard');
         } else {
           throw new Error('No access token found');
