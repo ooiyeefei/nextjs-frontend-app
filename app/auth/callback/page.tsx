@@ -46,38 +46,47 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Handle hash fragment
+        const currentUrl = new URL(window.location.href);
+        const searchParams = currentUrl.searchParams;
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
+
+        // Check for `code` in query parameters
+        const code = searchParams.get('code');
+        if (code) {
+          await supabase.auth.exchangeCodeForSession(code);
+          router.push('/dashboard');
+          return;
+        }
+
+        // Check for `access_token` in hash fragment
         const accessToken = hashParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token');
-
         if (accessToken && refreshToken) {
-          // Set session with Supabase
           await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
 
-          // Clean up URL by removing the hash fragment
-          window.history.replaceState(null, "", window.location.pathname);
+          // Clean up the URL by removing the hash fragment
+          window.history.replaceState(null, '', window.location.pathname);
 
-          // Redirect to dashboard
-          router.replace('/dashboard');
-        } else {
-          throw new Error('No access token found');
+          router.push('/dashboard');
+          return;
         }
+
+        throw new Error('No valid authentication parameters found');
       } catch (error) {
-        console.error('Auth error:', error);
-        router.replace('/login');
+        console.error('Authentication error:', error);
+        router.push('/login');
       }
     };
 
     handleAuthCallback();
-  }, [router]);
+  }, [router, supabase]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">Loading...</div>
+      <div className="text-center">Processing authentication...</div>
     </div>
   );
 }
