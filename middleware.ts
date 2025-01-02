@@ -21,11 +21,24 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
 
+    if (error) {
+      console.error('Supabase auth error:', error.message);
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
 
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error('Middleware error:', err.message);
+    } else {
+      console.error('Unknown middleware error:', err);
+    }
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return response

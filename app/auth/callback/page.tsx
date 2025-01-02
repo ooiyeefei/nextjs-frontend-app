@@ -36,7 +36,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createBrowserSupabaseClient } from '@/lib/supabase/client'
+import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -45,32 +45,28 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        const { searchParams } = new URL(window.location.href);
+        console.log('Starting auth callback...');
+        console.log('Cookies:', document.cookie);
+
         const currentUrl = new URL(window.location.href);
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const searchParams = currentUrl.searchParams;
 
+        // Log query parameters
+        console.log('Search Params:', searchParams.toString());
+
+        // Check for query parameter "code"
         const code = searchParams.get('code');
-
         if (code) {
           console.log('Exchanging code for session:', code);
+
+          // Exchange code for session
           const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) throw error;
+          if (error) {
+            console.error('Error exchanging code for session:', error.message);
+            throw error;
+          }
 
-          router.push('/dashboard');
-          return;
-        }
-
-        // Check for hash fragment access_token
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
-        if (accessToken && refreshToken) {
-          console.log('Setting session with access token.');
-          await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          window.history.replaceState(null, '', window.location.pathname); // Clean up URL
+          console.log('Session successfully established with code.');
           router.push('/dashboard');
           return;
         }
@@ -83,7 +79,7 @@ export default function AuthCallback() {
     };
 
     handleAuthCallback();
-  }, [router, supabase.auth]);
+  }, [router]);
 
-  return <div>Loading...</div>;
+  return <div>Processing authentication...</div>;
 }
