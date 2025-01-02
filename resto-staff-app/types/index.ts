@@ -74,6 +74,13 @@ export interface CancelReservationModalProps {
     reservation: Reservation | null
   }
 
+export interface TableAvailabilityProps {
+  tableTypes: TableType[]
+  availabilities: TableAvailability[]
+  onAvailabilityChange: (availabilities: TableAvailability[]) => void
+  timeSlotChunk: number
+}
+
   // API/Data Types
 export interface TableAvailability {
     tableTypeName: any

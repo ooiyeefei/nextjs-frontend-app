@@ -7,28 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, X } from 'lucide-react'
-import { TableAvailability } from "./table-availability"
-import { TableType } from "./table-capacity-settings"
 import { getDateSpecificSchedule, getTableTypes, updateDateSpecificSchedule } from "@/lib/supabase/queries"
 import { toast } from "../ui/toast"
-
-interface TableAvailability {
-  tableTypeId: string;
-  tableTypeName: string;
-  quantity: number;
-}
-
-
-interface TimeSlot {
-  start: string
-  end: string
-  tables: TableAvailability[]
-}
-
-interface DateSchedule {
-  date: Date
-  timeSlots: TimeSlot[]
-}
+import { TableType, TableAvailability, TimeSlot, DateSchedule } from "@/types"
 
 interface DateSpecificScheduleProps {
   timeSlotChunk: number

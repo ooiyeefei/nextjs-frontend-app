@@ -3,22 +3,9 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { TableType } from "./table-capacity-settings"
 import { Plus, X } from 'lucide-react'
 import { useEffect } from "react"
-
-interface TableAvailability {
-  tableTypeId: string;
-  tableTypeName: string;
-  quantity: number;
-}
-
-interface TableAvailabilityProps {
-  tableTypes: TableType[]
-  availabilities: TableAvailability[]
-  onAvailabilityChange: (availabilities: TableAvailability[]) => void
-  timeSlotChunk: number
-}
+import { TableAvailability as TableAvailabilityType, TableAvailabilityProps } from "@/types"
 
 export function TableAvailability({
   tableTypes,
@@ -55,7 +42,7 @@ export function TableAvailability({
     onAvailabilityChange(availabilities.filter((_, i) => i !== index))
   }
 
-  const updateTableAvailability = (index: number, field: keyof TableAvailability, value: any) => {
+  const updateTableAvailability = (index: number, field: keyof TableAvailabilityType, value: TableAvailabilityType[keyof TableAvailabilityType]) => {
     const newAvailabilities = [...availabilities];
     newAvailabilities[index] = {
       ...newAvailabilities[index],
