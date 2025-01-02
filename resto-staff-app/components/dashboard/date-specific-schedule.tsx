@@ -9,17 +9,11 @@ import { Input } from "@/components/ui/input"
 import { Plus, X } from 'lucide-react'
 import { getDateSpecificSchedule, getTableTypes, updateDateSpecificSchedule } from "@/lib/supabase/queries"
 import { toast } from "../ui/toast"
-import { TableType, TableAvailability, TimeSlot, DateSchedule } from "@/types"
+import { TableType, TimeSlot, DateSchedule } from "@/types"
+import { TableAvailability } from "./table-availability"
 
 interface DateSpecificScheduleProps {
   timeSlotChunk: number
-}
-
-interface TableAvailabilityProps {
-  tableTypes: TableType[]
-  availabilities: TableAvailability[]
-  onAvailabilityChange: (tables: TableAvailability[]) => void
-  timeSlotChunk: number  // Add this line
 }
 
 export function DateSpecificSchedule({ timeSlotChunk }: DateSpecificScheduleProps) {
