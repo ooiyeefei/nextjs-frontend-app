@@ -9,6 +9,8 @@ export async function signInWithOtp(email: string) {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
+    console.log('Redirect URL:', `${window.location.origin}/auth/callback`);
+
     if (error) throw error;
     return { success: true };
   } catch (error) {
