@@ -1,14 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
 import { Label } from "../../../components/ui/label"
 import { Input } from "../../../components/ui/input"
 import { Textarea } from "../../../components/ui/textarea"
 import { Button } from "../../../components/ui/button"
 import { Checkbox } from "../../../components/ui/checkbox"
-import { useEffect } from "react"
-import { getBusinessProfile, upsertBusinessProfile } from "@/lib/supabase/queries"
+import Image from 'next/image'
+import { getBusinessLogoUrl, getBusinessProfile, uploadBusinessLogo, upsertBusinessProfile } from "@/lib/supabase/queries"
 import {
   Select,
   SelectContent,
@@ -43,6 +43,8 @@ type WeekSchedule = Record<string, DaySchedule>
 
 export default function ProfilePage() {
   const [loading, setLoading] = useState(false)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [schedule, setSchedule] = useState<WeekSchedule>(
     DAYS.reduce((acc, day) => ({
       ...acc,
@@ -58,7 +60,10 @@ export default function ProfilePage() {
     restaurantName: "",
     phone: "",
     website: "",
-    address: ""
+    address: "",
+    cancellationPolicy: "",
+    refundPolicy: "",
+    dataUsageDisclaimer: ""
   })
 
   // Load initial data
@@ -74,34 +79,47 @@ export default function ProfilePage() {
   
     const loadProfile = async () => {
       try {
-        const profile = await getBusinessProfile()
+        const profile = await getBusinessProfile();
         if (profile) {
           // Profile exists, set form data
           setFormData({
             restaurantName: profile['restaurant-name'] || "",
             phone: profile.phone || "",
             website: profile.website || "",
-            address: profile.address || ""
-          })
-          setSchedule(profile.operating_hours || defaultSchedule)
+            address: profile.address || "",
+            cancellationPolicy: profile.cancellation_policy || "",
+            refundPolicy: profile.refund_policy || "",
+            dataUsageDisclaimer: profile.data_usage_disclaimer || ""
+          });
+          setSchedule(profile.operating_hours || defaultSchedule);
+  
+          // Load logo URL
+          const logoUrl = await getBusinessLogoUrl();
+          if (logoUrl) {
+            setLogoUrl(logoUrl);
+          }
         } else {
           // No profile exists yet, set default empty state
           setFormData({
             restaurantName: "",
             phone: "",
             website: "",
-            address: ""
-          })
-          setSchedule(defaultSchedule)
+            address: "",
+            cancellationPolicy: "",
+            refundPolicy: "",
+            dataUsageDisclaimer: ""
+          });
+          setSchedule(defaultSchedule);
         }
       } catch (error) {
-        console.error('Failed to load profile:', error)
+        console.error('Failed to load profile:', error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    loadProfile()
-  }, [])
+    };
+  
+    loadProfile();
+  }, []);
   
   
 
@@ -148,6 +166,12 @@ export default function ProfilePage() {
     }))
   }
 
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      setLogoFile(event.target.files[0])
+    }
+  }
+
   const handleSaveGeneral = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -158,10 +182,18 @@ export default function ProfilePage() {
         website: formData.website,
         address: formData.address,
         'operating-hours': schedule,
-        'capacity_info': null  // Optional but included for completeness
+        'capacity_info': null,
+        cancellation_policy: formData.cancellationPolicy,
+        refund_policy: formData.refundPolicy,
+        data_usage_disclaimer: formData.dataUsageDisclaimer
       }
       
       await upsertBusinessProfile(profileData)
+      
+      if (logoFile) {
+        await uploadBusinessLogo(logoFile)
+      }
+
       toast({
         title: "Success",
         description: "General information has been updated",
@@ -193,6 +225,37 @@ export default function ProfilePage() {
       },
     }))
   }
+
+  const handleSavePolicies = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const profileData = {
+        'restaurant-name': formData.restaurantName, // Required field
+        cancellation_policy: formData.cancellationPolicy,
+        refund_policy: formData.refundPolicy,
+        data_usage_disclaimer: formData.dataUsageDisclaimer
+      };
+      
+      await upsertBusinessProfile(profileData);
+      
+      toast({
+        title: "Success",
+        description: "Policies have been updated",
+        variant: "success"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update policies",
+        variant: "destructive"
+      });
+      console.error('Failed to save policies:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
 
   const handleSaveHours = async () => {
     setLoading(true)
@@ -235,6 +298,85 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSaveGeneral} className="space-y-4">
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <Label htmlFor="logo">Branding Logo</Label>
+              
+              {/* Logo Display */}
+              <div className="space-y-2">
+              {logoUrl && (
+                <div className="w-32 h-32">
+                  <Image
+                    src={logoUrl}
+                    alt="Business Logo"
+                    width={128}
+                    height={128}
+                    className="object-cover rounded-lg"
+                    unoptimized={true}
+                    priority={true}
+                    onError={(e) => {
+                      try {
+                        const imgElement = e.currentTarget as HTMLImageElement;
+                        console.error('Image loading error:', {
+                          src: imgElement.src,
+                          naturalWidth: imgElement.naturalWidth,
+                          naturalHeight: imgElement.naturalHeight,
+                          complete: imgElement.complete,
+                          currentSrc: imgElement.currentSrc,
+                          error: e,
+                        });
+
+                        // Check for network errors
+                        if (!imgElement.complete) {
+                          console.error('Network error: Image failed to load');
+                        }
+
+                        // Check for CORS errors
+                        if (imgElement.naturalWidth === 0 && imgElement.naturalHeight === 0) {
+                          console.error('CORS error: Image might be blocked due to cross-origin restrictions');
+                        }
+
+                        // Check for HTTP errors
+                        fetch(imgElement.src)
+                          .then(response => {
+                            if (!response.ok) {
+                              console.error(`HTTP error: ${response.status} ${response.statusText}`);
+                            }
+                          })
+                          .catch(fetchError => {
+                            console.error('Fetch error:', fetchError);
+                          });
+                      } catch (error: any) {
+                        console.error('Error in onError handler:', {
+                          name: error?.name,
+                          message: error?.message,
+                          stack: error?.stack,
+                          fullError: JSON.stringify(error, null, 2)
+                        });
+                      }
+                    }}
+                  />
+                </div>
+              )}
+
+                
+                {/* Always show upload button */}
+                <div>
+                  <Input
+                    type="file"
+                    id="logo"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                    accept="image/*"
+                  />
+                  <label
+                    htmlFor="logo"
+                    className="inline-flex items-center px-3 py-1 text-xs bg-white/80 hover:bg-white/90 text-gray-700 rounded cursor-pointer transition-colors"
+                  >
+                    Upload File
+                  </label>
+                </div>
+              </div>
+            </div>
               <div className="grid w-full max-w-sm items-center gap-1.5">
                 <Label htmlFor="restaurantName">Restaurant Name</Label>
                 <Input 
@@ -358,6 +500,48 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Policies</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSavePolicies} className="space-y-4">
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="cancellationPolicy">Cancellation Policy</Label>
+                <Textarea 
+                  id="cancellationPolicy" 
+                  value={formData.cancellationPolicy}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="refundPolicy">Refund Policy</Label>
+                <Textarea 
+                  id="refundPolicy" 
+                  value={formData.refundPolicy}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="dataUsageDisclaimer">Data Usage Disclaimer</Label>
+                <Textarea 
+                  id="dataUsageDisclaimer" 
+                  value={formData.dataUsageDisclaimer}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <Button 
+                type="submit"
+                className="bg-[#3B82F6] hover:bg-[#2563EB] text-white"
+                disabled={loading}
+              >
+                {loading ? "Saving..." : "Save Policies"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
 
         {/* Rest of the profile sections remain unchanged */}
       </div>

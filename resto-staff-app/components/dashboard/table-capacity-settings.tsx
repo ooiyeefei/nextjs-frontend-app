@@ -8,12 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Plus, X } from 'lucide-react'
 import { toast } from "../ui/toast"
 import { getTableTypes, updateTableTypes } from "@/lib/supabase/queries"
-
-export interface TableType {
-  id: string
-  name: string
-  seats: number
-}
+import { TableType } from "types"
 
 export function TableCapacitySettings() {
   const [tableTypes, setTableTypes] = useState<TableType[]>([])

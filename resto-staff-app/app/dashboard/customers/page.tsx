@@ -8,21 +8,19 @@ import { Button } from "@/components/ui/button"
 import { ChevronRight, PlusCircle } from 'lucide-react'
 import { useRouter } from "next/navigation"
 import { CreateCustomerModal } from "@/components/dashboard/create-customer-modal"
-
-interface Customer {
-  id: string
-  name: string
-  email: string
-  phone: string
-  total_visits: number
-  joined_date: string
-}
+import { EditCustomerModal } from "@/components/dashboard/edit-customer-modal"
+import { DeleteCustomerModal } from "@/components/dashboard/delete-customer-modal"
+import { Customer } from "@/types"
 
 export default function CustomersPage() {
   const router = useRouter()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   useEffect(() => {
     const fetchCustomers = async () => {
@@ -37,7 +35,7 @@ export default function CustomersPage() {
       }
     }
     fetchCustomers()
-  }, [])
+  }, [refreshTrigger])
 
   const handleRowClick = (customerId: string) => {
     router.push(`/dashboard/customers/${customerId}`)
@@ -54,6 +52,16 @@ export default function CustomersPage() {
   
 
   if (isLoading) return <div>Loading...</div>
+
+  const handleEditCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer)
+    setEditModalOpen(true)
+  }
+
+  const handleDeleteCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer)
+    setDeleteModalOpen(true)
+  }
 
   return (
     <>
@@ -97,6 +105,30 @@ export default function CustomersPage() {
                   <TableCell>{customer.phone}</TableCell>
                   <TableCell>{customer.total_visits}</TableCell>
                   <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleEditCustomer(customer)
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteCustomer(customer)
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </TableCell>
+                  <TableCell>
                       <ChevronRight 
                         className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" 
                       />
@@ -110,6 +142,18 @@ export default function CustomersPage() {
       <CreateCustomerModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)}
+        onSuccess={refreshCustomers}
+      />
+      <EditCustomerModal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        customer={selectedCustomer}
+        onSuccess={refreshCustomers}
+      />
+      <DeleteCustomerModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        customer={selectedCustomer}
         onSuccess={refreshCustomers}
       />
     </div>

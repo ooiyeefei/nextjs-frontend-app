@@ -5,7 +5,7 @@ import { AtSymbolIcon } from '@heroicons/react/24/outline';
 import { ArrowRightIcon } from '@heroicons/react/20/solid';
 import { Button } from './button';
 import { useState } from 'react';
-import { createClient } from '@supabase/supabase-js'
+import { signInWithOtp } from '@/lib/supabase/auth';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -15,21 +15,9 @@ export default function LoginForm() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    
+    setLoading(true);
     try {
-      setLoading(true);
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-      
-      if (error) throw error;
+      await signInWithOtp(email);
       setEmailSent(true);
       setMessage('Check your email for the login link!');
     } catch (error) {

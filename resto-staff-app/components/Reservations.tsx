@@ -1,11 +1,5 @@
 import { useEffect, useState } from 'react';
-
-interface Reservation {
-    id: string;
-    customer_name: string;
-    reservation_time: string; // Use string for timestamp
-    status: string; // Restrict values if needed (e.g., 'arriving-soon', 'late', etc.)
-  }
+import { Reservation } from '@/types';
 
 function Reservations() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -24,8 +18,8 @@ function Reservations() {
       <h2>Reservations</h2>
       <ul>
         {reservations.map((reservation) => (
-          <li key={reservation.id} className={`reservation-${reservation.status}`}>
-            {reservation.customer_name} - {new Date(reservation.reservation_time).toLocaleString()}
+          <li key={reservation.reservation_id} className={`reservation-${reservation.status}`}>
+            {reservation.customers?.name} - {new Date(reservation.reservation_time).toLocaleString()}
           </li>
         ))}
       </ul>

@@ -9,7 +9,6 @@ import { useState } from "react"
 import { X } from 'lucide-react'
 import { createCustomer } from "@/lib/supabase/queries"
 
-
 interface CreateCustomerModalProps {
     isOpen: boolean;
     onClose: () => void;

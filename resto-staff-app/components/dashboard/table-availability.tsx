@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { TableType } from "./table-capacity-settings"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Plus, X } from 'lucide-react'
 import { useEffect } from "react"
 
@@ -18,12 +17,14 @@ interface TableAvailabilityProps {
   tableTypes: TableType[]
   availabilities: TableAvailability[]
   onAvailabilityChange: (availabilities: TableAvailability[]) => void
+  timeSlotChunk: number
 }
 
 export function TableAvailability({
   tableTypes,
   availabilities,
   onAvailabilityChange,
+  timeSlotChunk
 }: TableAvailabilityProps) {
   useEffect(() => {
     console.log('TableAvailability props:', {

@@ -30,7 +30,18 @@ interface DateSchedule {
   timeSlots: TimeSlot[]
 }
 
-export function DateSpecificSchedule() {
+interface DateSpecificScheduleProps {
+  timeSlotChunk: number
+}
+
+interface TableAvailabilityProps {
+  tableTypes: TableType[]
+  availabilities: TableAvailability[]
+  onAvailabilityChange: (tables: TableAvailability[]) => void
+  timeSlotChunk: number  // Add this line
+}
+
+export function DateSpecificSchedule({ timeSlotChunk }: DateSpecificScheduleProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [dateSchedules, setDateSchedules] = useState<DateSchedule[]>([])
 
@@ -227,6 +238,7 @@ export function DateSpecificSchedule() {
                     onAvailabilityChange={(tables) => 
                       updateTimeSlot(selectedDate, index, 'tables', tables)
                     }
+                    timeSlotChunk={timeSlotChunk}
                   />
                 </div>
               ))}

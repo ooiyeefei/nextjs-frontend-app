@@ -5,54 +5,18 @@ import { getReservations, updateReservationStatus } from "@/lib/supabase/queries
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { Badge } from "../ui/badge"
-
-type Status = 'arriving-soon' | 'late' | 'no-show' | 'confirmed' | 'seated' | 'completed'
-
-const statusColors: Record<Status, string> = {
-  'arriving-soon': '!bg-yellow-500/10 !text-yellow-500',
-  'late': '!bg-red-500/10 !text-red-500',
-  'no-show': '!bg-gray-500/10 !text-gray-500',
-  'confirmed': '!bg-blue-500/10 !text-blue-500',
-  'seated': '!bg-green-500/10 !text-green-500',
-  'completed': '!bg-green-500/10 !text-green-500',
-}
-
-
-interface Customer {
-  id: string
-  name: string
-  email: string
-  phone: string
-  total_visits: number
-  joined_date: string
-  reservation_id: string | null
-}
-
-interface Reservation {
-  reservation_id: string
-  reservation_time: string
-  customer_email: string
-  phone: string
-  status: Status
-  special_requests: string | null
-  dietary_restrictions: string | null
-  party_size: number
-  customers: {
-    name: string
-    email: string
-  } | null
-}
+import { Button } from "../ui/button"
+import { Status, Reservation, statusColors, ReservationsTabProps } from "@/types"
 
 const StatusBadge = ({ status }: { status: Status }) => (
   <Badge 
-    className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${statusColors[status]}`}
+    className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${statusColors[status]}`}
   >
     {status}
   </Badge>
 )
 
-
-export function ReservationsTab() {
+export function ReservationsTab({ onCancelReservation, onEditReservation }: ReservationsTabProps) {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -127,6 +91,7 @@ export function ReservationsTab() {
           <TableHead>Status</TableHead>
           <TableHead>Special Requests</TableHead>
           <TableHead>Dietary Restrictions</TableHead>
+          <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -161,6 +126,24 @@ export function ReservationsTab() {
             </TableCell>
             <TableCell>{reservation.special_requests || '-'}</TableCell>
             <TableCell>{reservation.dietary_restrictions || '-'}</TableCell>
+            <TableCell>
+              <div className="flex gap-2">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => onEditReservation(reservation)}
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => onCancelReservation(reservation)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>

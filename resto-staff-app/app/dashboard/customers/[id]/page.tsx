@@ -1,5 +1,5 @@
 "use client"
-import { use } from 'react'
+import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, use } from 'react'
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "../../../../components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../../../../components/ui/avatar"
@@ -8,26 +8,7 @@ import { Badge } from "../../../../components/ui/badge"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getCustomerById } from "@/lib/supabase/queries"
-
-type Status = 'arriving-soon' | 'late' | 'no-show' | 'confirmed' | 'seated' | 'completed'
-
-const statusColors: Record<Status, string> = {
-  'arriving-soon': '!bg-yellow-500/10 !text-yellow-500',
-  'late': '!bg-red-500/10 !text-red-500',
-  'no-show': '!bg-gray-500/10 !text-gray-500',
-  'confirmed': '!bg-blue-500/10 !text-blue-500',
-  'seated': '!bg-green-500/10 !text-green-500',
-  'completed': '!bg-green-500/10 !text-green-500',
-}
-
-interface Reservation {
-  reservation_id: string
-  reservation_time: string
-  party_size: number
-  status: Status
-  special_requests?: string
-  dietary_restrictions?: string
-}
+import { Reservation, Status, statusColors } from "@/types"
 
 interface CustomerData {
   id: string
@@ -93,10 +74,12 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center space-x-4">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${customerData.name}`} />
-                  <AvatarFallback>{customerData.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                </Avatar>
+              <Avatar className="h-20 w-20">
+                <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${customerData.name}`} />
+                <AvatarFallback>
+                  {customerData.name.split(' ').map((n: string) => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
                 <div>
                   <h3 className="text-xl font-semibold">{customerData.name}</h3>
                   <p className="text-sm text-muted-foreground">
@@ -130,7 +113,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {customerData.reservations?.map((reservation) => (
+              {customerData.reservations?.map((reservation: Reservation) => (
                   <div
                     key={reservation.reservation_id}
                     className="flex items-center justify-between p-4 border rounded-lg"

@@ -32,6 +32,11 @@ export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateRes
     
     const form = event.target as HTMLFormElement
     const formData = new FormData(form)
+
+    console.log('Form Data:', {
+      special_requests: formData.get('special_requests'),
+      dietary_restrictions: formData.get('dietary_restrictions')
+    })
     
     const partySize = parseInt(formData.get('partySize') as string, 10)
     if (partySize < 1) {
@@ -58,8 +63,8 @@ export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateRes
         phone: formData.get('phone') as string || null,
         reservation_time: reservationTime,
         status: status,
-        special_requests: formData.get('specialRequests') as string || null,
-        dietary_restrictions: formData.get('dietaryRestrictions') as string || null,
+        special_requests: formData.get('special_requests') as string || null,
+        dietary_restrictions: formData.get('dietary_restrictions') as string || null,
         party_size: partySize
       }
 
@@ -219,22 +224,22 @@ export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateRes
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="specialRequests" className="text-right">
+              <Label htmlFor="special_requests" className="text-right">
                 Special Requests
               </Label>
               <Textarea 
-                id="specialRequests" 
+                id="special_requests" 
                 name="special_requests"
                 placeholder="Enter any special requests..."
                 className="col-span-3" 
             />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="dietaryRestrictions" className="text-right">
+              <Label htmlFor="dietary_restrictions" className="text-right">
                 Dietary Restrictions
               </Label>
               <Textarea 
-                    id="dietaryRestrictions" 
+                    id="dietary_restrictions" 
                     name="dietary_restrictions"
                     placeholder="Enter any dietary restrictions..."
                     className="col-span-3" 

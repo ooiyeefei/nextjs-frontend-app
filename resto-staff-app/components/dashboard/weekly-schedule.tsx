@@ -7,32 +7,15 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Plus, X, Copy } from 'lucide-react'
 import { TableAvailability } from "./table-availability"
-import { TableType } from "./table-capacity-settings"
+import { TableType, TimeSlot, WeeklyScheduleState } from "types"
 import { getTableTypes, updateWeeklySchedule } from "@/lib/supabase/queries"
 import { toast } from "../ui/toast"
 
-interface TableAvailability {
-  tableTypeId: string;
-  tableTypeName: string;
-  quantity: number;
+interface WeeklyScheduleProps {
+  timeSlotChunk: number
 }
 
-interface TimeSlot {
-  start: string
-  end: string
-  tables: TableAvailability[]
-}
-
-interface DaySchedule {
-  enabled: boolean
-  timeSlots: TimeSlot[]
-}
-
-type WeeklyScheduleState = {
-  [key in 'SUN' | 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT']: DaySchedule
-}
-
-export function WeeklySchedule() {
+export function WeeklySchedule({ timeSlotChunk }: WeeklyScheduleProps) {
   const [schedule, setSchedule] = useState<WeeklyScheduleState>({
     SUN: { enabled: false, timeSlots: [{ start: "10:30", end: "20:30", tables: [] }] },
     MON: { enabled: true, timeSlots: [{ start: "10:30", end: "20:30", tables: [] }] },
@@ -174,6 +157,7 @@ export function WeeklySchedule() {
                           tableTypes={tableTypes}
                           availabilities={slot.tables}
                           onAvailabilityChange={(tables) => updateTimeSlot(day, index, 'tables', tables)}
+                          timeSlotChunk={timeSlotChunk}
                         />
                       </div>
                     ))}
