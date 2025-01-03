@@ -31,7 +31,15 @@ type Database = {
 export const createBrowserSupabaseClient = () =>
   createBrowserClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        flowType: 'pkce',
+        detectSessionInUrl: true,
+        persistSession: true,
+        storage: typeof window !== 'undefined' ? window.localStorage : undefined
+      }
+    }
   )
 
 // Server client for server-side operations

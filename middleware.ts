@@ -12,6 +12,8 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: any) {
+          // Set cookies on both request and response
+          request.cookies.set({ name, value, ...options })
           response.cookies.set({ name, value, ...options })
         },
         remove(name: string, options: any) {
@@ -21,24 +23,15 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser();
+  // Add delay to allow session to be established
+  await new Promise(resolve => setTimeout(resolve, 100))
 
-    if (error) {
-      console.error('Supabase auth error:', error.message);
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
-    if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      console.error('Middleware error:', err.message);
-    } else {
-      console.error('Unknown middleware error:', err);
-    }
-    return NextResponse.redirect(new URL('/login', request.url));
+  if (!session && request.nextUrl.pathname.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   return response
