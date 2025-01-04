@@ -1,29 +1,31 @@
 import { createBrowserClient } from '@supabase/ssr'
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import type { cookies } from "next/headers"
+import { Customer, Reservation, BusinessProfile, Product, ReservationSetting } from "@/types"
 
 // Type for public-facing schema (only include what should be public)
 type Database = {
   customers: {
-    Row: {
-      id: string
-      name: string | null
-      email: string | null
-      phone: string | null
-      total_visits: number
-      joined_date: string
+    Row: Omit<Customer, 'reservation_id'> & {
+      business_id: string
+      reservation_id: string | null
     }
   }
   reservations: {
-    Row: {
-      reservation_id: string
-      reservation_time: string | null
-      customer_email: string | null
-      status: string | null
-      special_requests: string | null
-      dietary_restrictions: string | null
-      party_size: number | null
+    Row: Omit<Reservation, 'customers'> & {
+      business_id: string
     }
+  }
+  business_profiles: {
+    Row: Omit<BusinessProfile, 'id'> & {
+      id: string
+    }
+  }
+  products: {
+    Row: Product
+  }
+  reservation_settings: {
+    Row: ReservationSetting
   }
 }
 

@@ -83,51 +83,53 @@ export function ReservationsTab({ onCancelReservation, onEditReservation }: Rese
       <TableCaption>A list of reservations.</TableCaption>
       <TableHeader>
         <TableRow>
-          <TableHead>Customer Name</TableHead>
-          <TableHead>Email</TableHead>
-          <TableHead>Phone</TableHead>
-          <TableHead>Date & Time</TableHead>
-          <TableHead>Party Size</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Special Requests</TableHead>
-          <TableHead>Dietary Restrictions</TableHead>
-          <TableHead>Actions</TableHead>
+          <TableHead className="text-center">Customer Name</TableHead>
+          <TableHead className="text-center">Email</TableHead>
+          <TableHead className="text-center">Phone</TableHead>
+          <TableHead className="text-center">Date & Time</TableHead>
+          <TableHead className="text-center">Party Size</TableHead>
+          <TableHead className="text-center">Status</TableHead>
+          <TableHead className="text-center">Special Requests</TableHead>
+          <TableHead className="text-center">Dietary Restrictions</TableHead>
+          <TableHead className="text-center w-[200px]">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {reservations.map((reservation) => (
           <TableRow key={reservation.reservation_id}>
-            <TableCell>{reservation.customers?.name || '-'}</TableCell>
-            <TableCell>{reservation.customer_email}</TableCell>
-            <TableCell>{reservation.phone}</TableCell>
-            <TableCell>{new Date(reservation.reservation_time).toLocaleString()}</TableCell>
-            <TableCell>{reservation.party_size}</TableCell>
-            <TableCell>
-              <Select
-                value={reservation.status}
-                onValueChange={(value: Status) => {
-                  console.log('Selected reservation ID:', reservation.reservation_id) // Debug log
-                  handleStatusChange(reservation.reservation_id, value)
-                }}
-              >
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue>
-                    <StatusBadge status={reservation.status} />
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(statusColors).map(([status, colorClass]) => (
-                    <SelectItem key={status} value={status}>
-                      <StatusBadge status={status as Status} />
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <TableCell className="text-center">{reservation.customers?.name || '-'}</TableCell>
+            <TableCell className="text-center">{reservation.customer_email}</TableCell>
+            <TableCell className="text-center">{reservation.phone}</TableCell>
+            <TableCell className="text-center">{new Date(reservation.reservation_time).toLocaleString()}</TableCell>
+            <TableCell className="text-center">{reservation.party_size}</TableCell>
+            <TableCell className="text-center">
+              <div className="flex justify-center">
+                <Select
+                  value={reservation.status}
+                  onValueChange={(value: Status) => {
+                    console.log('Selected reservation ID:', reservation.reservation_id) // Debug log
+                    handleStatusChange(reservation.reservation_id, value)
+                  }}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue>
+                      <StatusBadge status={reservation.status} />
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(statusColors).map(([status, colorClass]) => (
+                      <SelectItem key={status} value={status}>
+                        <StatusBadge status={status as Status} />
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </TableCell>
-            <TableCell>{reservation.special_requests || '-'}</TableCell>
-            <TableCell>{reservation.dietary_restrictions || '-'}</TableCell>
-            <TableCell>
-              <div className="flex gap-2">
+            <TableCell className="text-center">{reservation.special_requests || '-'}</TableCell>
+            <TableCell className="text-center">{reservation.dietary_restrictions || '-'}</TableCell>
+            <TableCell className="text-center">
+              <div className="flex justify-center gap-3">
                 <Button
                   variant="default"
                   size="sm"

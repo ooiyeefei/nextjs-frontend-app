@@ -51,6 +51,60 @@ export interface BusinessProfile {
     data_usage_disclaimer?: string | null;
   }
 
+export interface Product {
+  id: string
+  business_id: string
+  name: string
+  description: string | null
+  price: number
+  image_url: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  category: string | null
+  stock_quantity: number
+  discount: number | null
+  rating: number | null
+  tags: string[]
+}
+
+export interface CreateProductData {
+  name: string
+  description?: string
+  price: number
+  image_url?: string
+  is_active: boolean
+  category?: string | null
+  stock_quantity?: number
+  discount?: number
+  tags?: string[]
+}
+
+export interface UpdateProductData extends Partial<CreateProductData> {
+  id: string
+  category?: string | null
+}
+
+export interface AvailableTable {
+  tableTypeId: string
+  tableTypeName: string
+  quantity: number
+}
+
+export interface CapacitySettings {
+  available_tables: AvailableTable[]
+}
+
+export interface ReservationSetting {
+  business_id: string
+  day_of_week: number
+  start_time: string
+  end_time: string
+  specific_date: string | null
+  capacity_settings: CapacitySettings
+}
+
+
 // Component Props
 export interface ModalProps {
     isOpen: boolean
@@ -80,6 +134,7 @@ export interface TableAvailabilityProps {
   onAvailabilityChange: (availabilities: TableAvailability[]) => void
   timeSlotChunk: number
 }
+
 
   // API/Data Types
 export interface TableAvailability {

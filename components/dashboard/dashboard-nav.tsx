@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Home, CalendarDays, Users, Settings, User, LogOut, FishIcon as Food } from 'lucide-react'
+import { Home, CalendarDays, Users, Settings, User, LogOut, ShoppingBag } from 'lucide-react'
 import { Button } from "../ui/button"
 import { createBrowserClient } from '@supabase/ssr'
 
@@ -54,7 +54,7 @@ export function DashboardNav() {
     {
       name: "Product Catalogue",
       href: "/dashboard/product-catalogue",
-      icon: Food,
+      icon: ShoppingBag,
     },
   ]
 

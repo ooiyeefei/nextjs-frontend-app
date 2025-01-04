@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
       hostname: 'tcidexsffobbjcoulmzt.supabase.co',
       pathname: '/storage/v1/object/public/**',
     }],
+    domains: ['tcidexsffobbjcoulmzt.supabase.co']
   },
   // Remove the headers and rewrites sections as they're not needed
   // when using Supabase storage directly

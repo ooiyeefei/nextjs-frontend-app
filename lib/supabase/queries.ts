@@ -1,4 +1,4 @@
-import { BusinessProfile, CreateReservationData, Customer, DateSchedule, Reservation, TableType, WeeklyScheduleState } from "types"
+import { BusinessProfile, CreateProductData, CreateReservationData, Customer, DateSchedule, Product, Reservation, TableType, UpdateProductData, WeeklyScheduleState } from "types"
 import { createBrowserSupabaseClient } from './client'
 import { format } from 'date-fns';
 
@@ -616,11 +616,15 @@ export async function getBusinessLogoUrl() {
     if (!logoFile) return null
 
     // Get public URL for the logo
-    const { data } = supabase.storage
+    const { data, error } = await supabase.storage
       .from('business-files')
-      .getPublicUrl(`${businessProfile.id}/${logoFile.name}`)
+      .createSignedUrl(
+        `${businessProfile.id}/${logoFile.name}`,
+        3600
+      )
 
-    return data?.publicUrl || null
+    if (error) throw error
+    return data?.signedUrl || null
   } catch (error: any) {
     console.error('Failed to fetch logo URL:', {
       name: error?.name,
@@ -859,67 +863,265 @@ function getDayNumber(day: string): number {
 }
 
 
+export async function getProducts() {
+  const supabase = createBrowserSupabaseClient()
+  try {
+    const { data: businessProfile } = await supabase
+      .from('business_profiles')
+      .select('id')
+      .single()
+    
+    if (!businessProfile) return []
 
-// declare
-//   v_customer record;
-//   v_old_email text;
-//   v_reservation_count integer;
-// begin
-//   -- First get the existing customer data to get the old email
-//   select * into v_customer
-//   from customers
-//   where id = p_customer_id 
-//   and business_id = p_business_id;
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('business_id', businessProfile.id)
+      .order('created_at', { ascending: false })
 
-//   if not found then
-//     return json_build_object('success', false, 'message', 'Customer not found');
-//   end if;
+    if (error) throw error
+    return data as Product[]
+  } catch (error: any) {
+    console.error('Error fetching products:', {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+      code: error?.code,
+      details: error?.details,
+      fullError: JSON.stringify(error, null, 2)
+    })
+    throw error
+  }
+}
 
-//   -- Store the old email
-//   v_old_email := v_customer.email;
-  
-//   raise notice 'Updating customer email from % to %', v_old_email, p_new_email;
+export async function getProductImageUrl(imagePath: string) {
+  const supabase = createBrowserSupabaseClient()
+  try {
+    const { data } = await supabase.storage
+      .from('product-catalogue')
+      .createSignedUrl(imagePath, 3600) // 1 hour expiry
 
-//   -- If email is being updated, update reservations FIRST using the OLD email
-//   if p_new_email is not null and p_new_email <> v_old_email then
-//     -- Get reservation count for debugging
-//     select count(*) into v_reservation_count
-//     from reservations
-//     where customer_email = v_old_email
-//     and business_id = p_business_id;
+    return data?.signedUrl || null
+  } catch (error: any) {
+    console.error('Failed to get product image URL:', {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+      code: error?.code,
+      details: error?.details,
+      fullError: JSON.stringify(error, null, 2)
+    })
+    return null
+  }
+}
 
-//     raise notice 'Found % reservations to update', v_reservation_count;
 
-//     -- Update reservations using the OLD email to find records
-//     update reservations
-//     set customer_email = p_new_email
-//     where customer_email = v_old_email
-//     and business_id = p_business_id;
-//   end if;
+export async function createProduct(productData: CreateProductData) {
+  const supabase = createBrowserSupabaseClient()
+  try {
+    const { data: businessProfile } = await supabase
+      .from('business_profiles')
+      .select('id')
+      .single()
 
-//   -- Then update customer
-//   update customers
-//   set 
-//     email = coalesce(p_new_email, email),
-//     name = coalesce(p_new_name, name),
-//     phone = coalesce(p_new_phone, phone),
-//     updated_at = now()
-//   where id = p_customer_id
-//   and business_id = p_business_id;
+    if (!businessProfile) throw new Error('No business profile found')
 
-//   return json_build_object(
-//     'success', true,
-//     'message', 'Customer updated successfully',
-//     'old_email', v_old_email,
-//     'new_email', p_new_email,
-//     'reservations_updated', v_reservation_count
-//   );
-// exception
-//   when others then
-//     raise notice 'Error updating customer: %, SQLSTATE: %', SQLERRM, SQLSTATE;
-//     return json_build_object(
-//       'success', false,
-//       'message', SQLERRM,
-//       'error_detail', SQLSTATE
-//     );
-// end;
+    const { data, error } = await supabase
+      .from('products')
+      .insert([{
+        ...productData,
+        business_id: businessProfile.id,
+        tags: productData.tags || [],
+        stock_quantity: productData.stock_quantity || 0
+      }])
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as Product
+  } catch (error: any) {
+    console.error('Error creating product:', {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+      code: error?.code,
+      details: error?.details,
+      fullError: JSON.stringify(error, null, 2)
+    })
+    throw error
+  }
+}
+
+export async function updateProduct(updateData: UpdateProductData) {
+  const supabase = createBrowserSupabaseClient()
+  try {
+    const { data: businessProfile } = await supabase
+      .from('business_profiles')
+      .select('id')
+      .single()
+
+    if (!businessProfile) throw new Error('No business profile found')
+
+    const { id, ...productData } = updateData
+    const { data, error } = await supabase
+      .from('products')
+      .update(productData)
+      .eq('id', id)
+      .eq('business_id', businessProfile.id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as Product
+  } catch (error: any) {
+    console.error('Error updating product:', {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+      code: error?.code,
+      details: error?.details,
+      fullError: JSON.stringify(error, null, 2)
+    })
+    throw error
+  }
+}
+
+export async function deleteProduct(productId: string) {
+  const supabase = createBrowserSupabaseClient()
+  try {
+    const { data: businessProfile } = await supabase
+      .from('business_profiles')
+      .select('id')
+      .single()
+
+    if (!businessProfile) throw new Error('No business profile found')
+
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', productId)
+      .eq('business_id', businessProfile.id)
+
+    if (error) throw error
+    return true
+  } catch (error: any) {
+    console.error('Error deleting product:', {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+      code: error?.code,
+      details: error?.details,
+      fullError: JSON.stringify(error, null, 2)
+    })
+    throw error
+  }
+}
+
+export async function uploadProductImage(imageFile: File, category?: string) {
+  const supabase = createBrowserSupabaseClient()
+  try {
+    // Get business profile first
+    const { data: businessProfile } = await supabase
+      .from('business_profiles')
+      .select('id')
+      .single()
+    
+    if (!businessProfile) throw new Error('No business profile found')
+
+    // Create a unique filename
+    const fileExt = imageFile.name.split('.').pop()
+    const categoryPath = category?.trim() || 'uncategorized'
+    const fileName = `${businessProfile.id}/${categoryPath}/${Date.now()}.${fileExt}`
+
+    const { data, error } = await supabase.storage
+      .from('product-catalogue')
+      .upload(fileName, imageFile, {
+        cacheControl: '3600',
+        upsert: true
+      })
+
+    if (error) throw error
+    return fileName
+  } catch (error: any) {
+    console.error('Failed to upload product image:', {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+      code: error?.code,
+      details: error?.details,
+      fullError: JSON.stringify(error, null, 2)
+    })
+    throw error
+  }
+}
+
+export async function moveProductImage(
+  oldImagePath: string,
+  newCategory: string,
+  businessId: string
+) {
+  const supabase = createBrowserSupabaseClient()
+  try {
+    // Extract filename from old path
+    const fileName = oldImagePath.split('/').pop()
+    if (!fileName) throw new Error('Invalid image path')
+
+    // Create new path with new category
+    const newImagePath = `${businessId}/${newCategory}/${fileName}`
+
+    // Copy file to new location
+    const { data: copyData, error: copyError } = await supabase.storage
+      .from('product-catalogue')
+      .copy(oldImagePath, newImagePath)
+
+    if (copyError) throw copyError
+
+    // Delete old file after successful copy
+    const { error: deleteError } = await supabase.storage
+      .from('product-catalogue')
+      .remove([oldImagePath])
+
+    if (deleteError) throw deleteError
+
+    return newImagePath
+  } catch (error) {
+    console.error('Failed to move product image:', error)
+    throw error
+  }
+}
+
+export async function getProductCategories(currentCategory?: string | null) {
+  const supabase = createBrowserSupabaseClient()
+  try {
+    const { data: businessProfile } = await supabase
+      .from('business_profiles')
+      .select('id')
+      .single()
+    
+    if (!businessProfile) return []
+
+    const { data, error } = await supabase
+      .from('products')
+      .select('category')
+      .eq('business_id', businessProfile.id)
+      .not('category', 'is', null)
+
+    if (error) throw error
+
+    // Transform null categories to 'Uncategorized'
+    const categories = [...new Set(data
+      .map(item => item.category || 'Uncategorized')
+      .filter(Boolean)
+    )]
+    
+    // Add current category if it exists
+    if (currentCategory && !categories.includes(currentCategory)) {
+      categories.push(currentCategory)
+    }
+
+    return categories
+  } catch (error) {
+    console.error('Error fetching categories:', error)
+    throw error
+  }
+}

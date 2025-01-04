@@ -80,11 +80,11 @@ export default function CustomersPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Total Visits</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
+                <TableHead className="text-center">Name</TableHead>
+                <TableHead className="text-center">Email</TableHead>
+                <TableHead className="text-center">Phone</TableHead>
+                <TableHead className="text-center">Total Visits</TableHead>
+                <TableHead className="text-center w-[200px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -100,12 +100,12 @@ export default function CustomersPage() {
                   `}
                   onClick={() => handleRowClick(customer.id)}
                 >
-                  <TableCell className="font-medium">{customer.name}</TableCell>
-                  <TableCell>{customer.email}</TableCell>
-                  <TableCell>{customer.phone}</TableCell>
-                  <TableCell>{customer.total_visits}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
+                  <TableCell className="text-center font-medium">{customer.name}</TableCell>
+                  <TableCell className="text-center">{customer.email}</TableCell>
+                  <TableCell className="text-center">{customer.phone}</TableCell>
+                  <TableCell className="text-center">{customer.total_visits}</TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex justify-center gap-3">
                       <Button
                         variant="default"
                         size="sm"
@@ -128,7 +128,7 @@ export default function CustomersPage() {
                       </Button>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-center">
                       <ChevronRight 
                         className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" 
                       />
