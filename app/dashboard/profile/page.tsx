@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "../../../components/ui/select"
 import { toast } from "@/components/ui/toast"
+import { UploadButton } from "@/components/ui/upload-button"
 
 const DAYS = [
   "Monday",
@@ -300,80 +301,135 @@ export default function ProfilePage() {
             <form onSubmit={handleSaveGeneral} className="space-y-4">
             <div className="grid w-full max-w-sm items-center gap-1.5">
               <Label htmlFor="logo">Branding Logo</Label>
-              
-              {/* Logo Display */}
-              <div className="space-y-2">
-              {logoUrl && (
-                <div className="w-32 h-32">
-                  <Image
-                    src={logoUrl}
-                    alt="Business Logo"
-                    width={128}
-                    height={128}
-                    className="object-cover rounded-lg"
-                    unoptimized={true}
-                    priority={true}
-                    onError={(e) => {
-                      try {
-                        const imgElement = e.currentTarget as HTMLImageElement;
-                        console.error('Image loading error:', {
-                          src: imgElement.src,
-                          naturalWidth: imgElement.naturalWidth,
-                          naturalHeight: imgElement.naturalHeight,
-                          complete: imgElement.complete,
-                          currentSrc: imgElement.currentSrc,
-                          error: e,
-                        });
-
-                        // Check for network errors
-                        if (!imgElement.complete) {
-                          console.error('Network error: Image failed to load');
-                        }
-
-                        // Check for CORS errors
-                        if (imgElement.naturalWidth === 0 && imgElement.naturalHeight === 0) {
-                          console.error('CORS error: Image might be blocked due to cross-origin restrictions');
-                        }
-
-                        // Check for HTTP errors
-                        fetch(imgElement.src)
-                          .then(response => {
-                            if (!response.ok) {
-                              console.error(`HTTP error: ${response.status} ${response.statusText}`);
-                            }
-                          })
-                          .catch(fetchError => {
-                            console.error('Fetch error:', fetchError);
+              <div className="space-y-3 flex flex-col">
+                {logoUrl && (
+                  <div className="w-32 h-32 flex justify-center">
+                    <Image 
+                      src={logoUrl} 
+                      alt="Business Logo" 
+                      width={128} 
+                      height={128} 
+                      className="object-cover rounded-lg"
+                      unoptimized={true}
+                      priority={true}
+                      onError={(e) => {
+                        try {
+                          const imgElement = e.currentTarget as HTMLImageElement;
+                          console.error('Image loading error:', {
+                            src: imgElement.src,
+                            naturalWidth: imgElement.naturalWidth,
+                            naturalHeight: imgElement.naturalHeight,
+                            complete: imgElement.complete,
+                            currentSrc: imgElement.currentSrc,
+                            error: e,
                           });
-                      } catch (error: any) {
-                        console.error('Error in onError handler:', {
-                          name: error?.name,
-                          message: error?.message,
-                          stack: error?.stack,
-                          fullError: JSON.stringify(error, null, 2)
+
+                          // Network error check
+                          if (!imgElement.complete) {
+                            console.error('Network error: Image failed to load');
+                            toast({
+                              title: "Error",
+                              description: "Failed to load image due to network error",
+                              variant: "destructive"
+                            });
+                          }
+
+                          // CORS error check
+                          if (imgElement.naturalWidth === 0 && imgElement.naturalHeight === 0) {
+                            console.error('CORS error: Image might be blocked due to cross-origin restrictions');
+                            toast({
+                              title: "Error",
+                              description: "Image access blocked due to security restrictions",
+                              variant: "destructive"
+                            });
+                          }
+
+                          // HTTP error check
+                          fetch(imgElement.src)
+                            .then(response => {
+                              if (!response.ok) {
+                                console.error(`HTTP error: ${response.status} ${response.statusText}`);
+                                toast({
+                                  title: "Error",
+                                  description: `Failed to load image: ${response.statusText}`,
+                                  variant: "destructive"
+                                });
+                              }
+                            })
+                            .catch(fetchError => {
+                              console.error('Fetch error:', fetchError);
+                              toast({
+                                title: "Error",
+                                description: "Failed to verify image source",
+                                variant: "destructive"
+                              });
+                            });
+                        } catch (error: any) {
+                          console.error('Error in onError handler:', {
+                            name: error?.name,
+                            message: error?.message,
+                            stack: error?.stack,
+                            fullError: JSON.stringify(error, null, 2)
+                          });
+                          toast({
+                            title: "Error",
+                            description: "An unexpected error occurred while loading the image",
+                            variant: "destructive"
+                          });
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+                <div className="flex w-full">
+                  <Input
+                    type="file"
+                    id="logo-upload"
+                    onChange={(e) => {
+                      try {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          
+                          // File size validation (e.g., 5MB limit)
+                          if (file.size > 5 * 1024 * 1024) {
+                            toast({
+                              title: "Error",
+                              description: "File size must be less than 5MB",
+                              variant: "destructive"
+                            });
+                            return;
+                          }
+
+                          // File type validation
+                          if (!file.type.startsWith('image/')) {
+                            toast({
+                              title: "Error",
+                              description: "Please upload an image file",
+                              variant: "destructive"
+                            });
+                            return;
+                          }
+
+                          handleLogoUpload(e);
+                        }
+                      } catch (error) {
+                        console.error('Error handling file upload:', error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to process the uploaded file",
+                          variant: "destructive"
                         });
                       }
                     }}
-                  />
-                </div>
-              )}
-
-                
-                {/* Always show upload button */}
-                <div>
-                  <Input
-                    type="file"
-                    id="logo"
-                    onChange={handleLogoUpload}
                     className="hidden"
                     accept="image/*"
                   />
-                  <label
-                    htmlFor="logo"
-                    className="inline-flex items-center px-3 py-1 text-xs bg-white/80 hover:bg-white/90 text-gray-700 rounded cursor-pointer transition-colors"
-                  >
-                    Upload File
-                  </label>
+                  <UploadButton
+                    type="button"
+                    text={logoFile ? logoFile.name : "Upload"}
+                    onClick={() => document.getElementById('logo-upload')?.click()}
+                    variant="secondary"
+                  />
                 </div>
               </div>
             </div>
@@ -398,7 +454,7 @@ export default function ProfilePage() {
               <div className="grid w-full max-w-sm items-center gap-1.5">
                 <Label htmlFor="website">Website</Label>
                 <Input 
-                  type="text" // Change from type="url" to type="text"
+                  type="text" 
                   id="website"
                   value={formData.website}
                   onChange={handleInputChange}

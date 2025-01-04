@@ -111,9 +111,6 @@ export default function ProductCataloguePage() {
             </div>
 
             <Card>
-                <CardHeader>
-                    <CardTitle>Products</CardTitle>
-                </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>

@@ -164,3 +164,11 @@
 .table-cell-hover {
   @apply relative overflow-hidden;
 }
+
+.day-section:nth-child(odd) {
+  background-color: rgba(30, 41, 59, 0.6);  /* Darker shade */
+}
+
+.day-section:nth-child(even) {
+  background-color: rgba(30, 41, 59, 0.3);  /* Lighter shade */
+}

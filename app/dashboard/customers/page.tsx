@@ -67,15 +67,12 @@ export default function CustomersPage() {
     <>
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Customers</h1>
+          <h1 className="text-3xl font-bold">Customers List</h1>
           <Button onClick={() => setIsModalOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" /> Create Customer
           </Button>
         </div>
       <Card>
-        <CardHeader>
-          <CardTitle>Customer List</CardTitle>
-        </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>

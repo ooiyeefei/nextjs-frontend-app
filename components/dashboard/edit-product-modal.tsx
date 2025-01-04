@@ -174,7 +174,7 @@ export function EditProductModal({ isOpen, onClose, product, onSuccess }: EditPr
                             <div className="col-span-3">
                                 <UploadButton
                                 type="button"
-                                text={imageFile ? imageFile.name : "Upload files"}
+                                text={imageFile ? imageFile.name : "Upload"}
                                 onClick={() => document.getElementById('image-upload')?.click()}
                                 />
                                 <Input 
@@ -292,7 +292,7 @@ export function EditProductModal({ isOpen, onClose, product, onSuccess }: EditPr
                                 className="col-span-3"
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
+                        <div className="grid grid-cols-4 items-center gap-4 mb-3">
                             <Label htmlFor="tags" className="text-right">Tags</Label>
                             <Input 
                                 id="tags"
@@ -302,9 +302,9 @@ export function EditProductModal({ isOpen, onClose, product, onSuccess }: EditPr
                                 className="col-span-3"
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
+                        <div className="grid grid-cols-4 items-center gap-4 mb-3">
                             <Label className="text-right">Status</Label>
-                            <div className="col-span-3 flex items-center space-x-2">
+                            <div className="col-span-3 flex items-center gap-3">
                                 <Switch
                                     id="is_active"
                                     checked={formData.is_active}

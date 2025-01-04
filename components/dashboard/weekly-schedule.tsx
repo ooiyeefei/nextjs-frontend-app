@@ -96,11 +96,11 @@ export function WeeklySchedule({ timeSlotChunk }: WeeklyScheduleProps) {
       <CardHeader>
         <CardTitle>Weekly Hours</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 divide-y divide-gray-300/30">
         {(Object.keys(schedule) as Array<keyof WeeklyScheduleState>).map((day) => (
-          <div key={day} className="space-y-4">
-            <div className="flex items-start space-x-4">
-              <div className="w-20 pt-2">
+          <div key={day} className="day-section p-4 transition-colors">
+            <div className="flex items-center space-x-4">
+              <div className="w-20 flex items-center">
                 <Checkbox
                   id={`day-${day}`}
                   checked={schedule[day].enabled}
@@ -113,7 +113,7 @@ export function WeeklySchedule({ timeSlotChunk }: WeeklyScheduleProps) {
                   {day}
                 </label>
               </div>
-              <div className="flex-1 space-y-4">
+              <div className="flex-1 pl-4">
                 {schedule[day].enabled ? (
                   <>
                     {schedule[day].timeSlots.map((slot, index) => (

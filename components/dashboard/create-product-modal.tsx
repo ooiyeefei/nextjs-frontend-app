@@ -112,23 +112,23 @@ export function CreateProductModal({ isOpen, onClose, onSuccess}: CreateProductM
                             <Label htmlFor="name" className="text-right">Name</Label>
                             <Input id="name" value={formData.name} onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))} className="col-span-3" required />
                         </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="image" className="text-right">Image</Label>
                             <div className="col-span-3">
                                 <UploadButton
                                 type="button"
-                                text={imageFile ? imageFile.name : "Upload files"}
+                                text={imageFile ? imageFile.name : "Upload"}
                                 onClick={() => document.getElementById('image-upload')?.click()}
                                 />
                                 <Input 
-                                id="image-upload"
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                                className="hidden"
+                                    id="image-upload"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                                    className="hidden"
                                 />
                             </div>
-                            </div>
+                        </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="description" className="text-right">Description</Label>
                             <Textarea id="description" value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} className="col-span-3" />
