@@ -1,10 +1,10 @@
 import AWS from 'aws-sdk'
 
 const awsConfig = {
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'ap-southeast-1',
+  region: process.env.AWS_REGION || 'ap-southeast-1',
   credentials: new AWS.Credentials({
-    accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY || ''
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
   })
 }
 

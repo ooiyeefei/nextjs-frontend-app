@@ -28,7 +28,7 @@ export async function sendReservationEmail(
 
     // Prepare email content
     const emailParams = {
-      Source: `${profile['restaurant-name']} <${process.env.NEXT_PUBLIC_AWS_SES_FROM_EMAIL}>`,
+      Source: `${profile['restaurant-name']} <${process.env.AWS_SES_FROM_EMAIL}>`,
       Destination: {
         // ToAddresses: [reservation.customer_email]
         ToAddresses: ['yeefeiooi+appNotification@gmail.com']
@@ -64,7 +64,7 @@ export async function sendReservationEmail(
 
     // Publish notification to SNS topic
     await sns.publish({
-      TopicArn: process.env.NEXT_PUBLIC_AWS_SNS_TOPIC_ARN,
+      TopicArn: process.env.AWS_SNS_TOPIC_ARN,
       Message: `
     New ${type} Reservation
 
@@ -96,9 +96,9 @@ export async function sendReservationEmail(
     console.error('Failed to send reservation notification:', {
       error,
       credentials: {
-        region: process.env.NEXT_PUBLIC_AWS_REGION,
-        hasAccessKey: !!process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID,
-        hasSecretKey: !!process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY
+        region: process.env.AWS_REGION,
+        hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+        hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY
       }
     })
     throw error
