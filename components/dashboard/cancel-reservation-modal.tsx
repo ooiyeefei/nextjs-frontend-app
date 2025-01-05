@@ -26,9 +26,6 @@ export function CancelReservationModal({ isOpen, onClose, reservation }: CancelR
         variant: "success"
       })
       
-      // Refresh the reservations list
-      window.location.reload()
-      onClose()
     } catch (error) {
       console.error('Failed to cancel reservation:', error)
       toast({

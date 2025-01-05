@@ -86,7 +86,7 @@ export async function sendReservationEmail(
     }
 
     // Send notifications through the server-side API route
-    const response = await fetch('/lib/aws/route', {
+    const response = await fetch('/api/notifications', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
