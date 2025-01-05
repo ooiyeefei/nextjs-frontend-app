@@ -23,14 +23,11 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Add delay to allow session to be established
-  await new Promise(resolve => setTimeout(resolve, 100))
-
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  if (!session && (
+  if (!user && (
     request.nextUrl.pathname.startsWith('/dashboard') ||
     request.nextUrl.pathname.startsWith('/customers')
   )) {
@@ -43,6 +40,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard/:path*',
-    '/customers/:path*'
+    '/customers/:path*',
+    '/customers/[id]'
   ]
 }
