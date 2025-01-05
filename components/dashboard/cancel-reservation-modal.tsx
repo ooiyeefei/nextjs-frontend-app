@@ -38,6 +38,8 @@ export function CancelReservationModal({ isOpen, onClose, reservation }: CancelR
       })
     } finally {
       setIsLoading(false)
+      window.location.reload()
+      onClose()
     }
   }
 

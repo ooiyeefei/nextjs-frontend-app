@@ -1,6 +1,7 @@
 import { BusinessProfile, CreateProductData, CreateReservationData, Customer, DateSchedule, Product, Reservation, TableType, UpdateProductData, WeeklyScheduleState } from "types"
 import { createBrowserSupabaseClient } from './client'
 import { format } from 'date-fns';
+import { sendReservationEmail } from "../aws/email-service";
 
 export async function getReservations() {
   const supabase = createBrowserSupabaseClient()
@@ -338,31 +339,52 @@ export async function updateReservationStatus(id: string, status: string) {
   
       if (!businessProfile) throw new Error('No business profile found')
   
-        const { data, error } = await supabase
-        .from("reservations")
-        .insert([{
-          ...reservationData,
-          business_id: businessProfile.id,
-          special_requests: reservationData.special_requests?.trim() || null,
-          dietary_restrictions: reservationData.dietary_restrictions?.trim() || null,
-        }])
-        .select(`
-          *,
-          customers!inner(name, email)
-        `)
-        .single()
-        console.log('Supabase Response:', { data, error })
-  
+      // Call the stored procedure in supabase to check if customers exist, if not create new customer record
+      const { data, error } = await supabase
+      .rpc('create_reservation_with_customer', {
+        p_customer_name: reservationData.customer_name,
+        p_customer_email: reservationData.customer_email,
+        p_phone: reservationData.phone,
+        p_business_id: businessProfile.id,
+        p_reservation_time: reservationData.reservation_time,
+        p_party_size: reservationData.party_size,
+        p_status: reservationData.status,
+        p_special_requests: reservationData.special_requests,
+        p_dietary_restrictions: reservationData.dietary_restrictions
+      })
+
       if (error) throw error
-  
-      const formattedData = data ? {
-        ...data,
-        customer_name: (data.customers as any)[0]?.name,
-        customers: {
-          name: (data.customers as any)[0]?.name,
-          email: (data.customers as any)[0]?.email
-        }
-      } : null
+
+    // Fetch the complete reservation data with customer info
+    const { data: reservationWithCustomer, error: fetchError } = await supabase
+      .from('reservations')
+      .select(`
+        *,
+        customers(name, email)
+      `)
+      .eq('reservation_id', data.reservation_id)
+      .single()
+
+    if (fetchError) throw fetchError
+
+    // Format the data for email notification
+    const formattedData = reservationWithCustomer ? {
+      ...reservationWithCustomer,
+      customer_name: reservationWithCustomer.customers?.name,
+      customers: {
+        name: reservationWithCustomer.customers?.name,
+        email: reservationWithCustomer.customers?.email
+      }
+    } : null
+
+    if (formattedData) {
+      await sendReservationEmail(
+        businessProfile.id,
+        'create',
+        businessProfile,
+        formattedData
+      )
+    }
   
       return formattedData
 
@@ -394,9 +416,38 @@ export async function updateReservation(reservationId: string, updateData: Parti
       .update(updateData)
       .eq('reservation_id', reservationId)
       .eq('business_id', businessProfile.id)
-      .select()
+      .select(`
+        *,
+        customers!inner(name, email)
+      `)
+      .single()
 
     if (error) throw error
+
+    if (data) {
+      const formattedReservation: Reservation = {
+        reservation_id: data.reservation_id,
+        reservation_time: data.reservation_time,
+        customer_email: data.customer_email,
+        phone: data.phone,
+        party_size: data.party_size,
+        status: data.status,
+        special_requests: data.special_requests,
+        dietary_restrictions: data.dietary_restrictions,
+        customers: {
+          name: data.customers.name,
+          email: data.customers.email
+        }
+      }
+
+      await sendReservationEmail(
+        businessProfile.id,
+        'update',
+        businessProfile,
+        formattedReservation
+      )
+    }
+
     return data
   } catch (error: any) {
     console.error('Failed to update reservation:', {
@@ -428,6 +479,35 @@ export async function cancelReservation(reservationId: string) {
 
     if (!businessProfile) throw new Error('No business profile found')
 
+    // Get reservation details before deletion
+    const { data: reservationData } = await supabase
+      .from('reservations')
+      .select(`
+        *,
+        customers!inner(name, email)
+      `)
+      .eq('reservation_id', reservationId)
+      .eq('business_id', businessProfile.id)
+      .single()
+
+    if (!reservationData) throw new Error('Reservation not found')
+
+    // Format the reservation data
+    const formattedReservation: Reservation = {
+      reservation_id: reservationData.reservation_id,
+      reservation_time: reservationData.reservation_time,
+      customer_email: reservationData.customer_email,
+      phone: reservationData.phone,
+      party_size: reservationData.party_size,
+      status: reservationData.status,
+      special_requests: reservationData.special_requests,
+      dietary_restrictions: reservationData.dietary_restrictions,
+      customers: {
+        name: reservationData.customers.name,
+        email: reservationData.customers.email
+      }
+    }
+
     // Delete the reservation with both checks
     const { error } = await supabase
       .from('reservations')
@@ -438,6 +518,15 @@ export async function cancelReservation(reservationId: string) {
       })
 
     if (error) throw error
+
+    // Send cancellation email after successful deletion
+    await sendReservationEmail(
+      businessProfile.id,
+      'cancel',
+      businessProfile,
+      formattedReservation
+    )
+
 
     return true
   }  catch (error: any) {

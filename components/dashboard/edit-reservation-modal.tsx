@@ -138,6 +138,7 @@ export function EditReservationModal({ isOpen, onClose, reservation }: EditReser
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Party Size</Label>
               <Input 
+                name="party_size"
                 type="number"
                 min="1"
                 value={partySize}
