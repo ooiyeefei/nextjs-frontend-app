@@ -1,7 +1,7 @@
 import { BusinessProfile, CreateProductData, CreateReservationData, Customer, DateSchedule, Product, Reservation, TableType, UpdateProductData, WeeklyScheduleState } from "types"
 import { createBrowserSupabaseClient } from './client'
 import { format } from 'date-fns';
-import { sendReservationEmail } from "../aws/email-service";
+import { sendReservationEmail } from "../../app/lib/aws/email-service";
 
 export async function getReservations() {
   const supabase = createBrowserSupabaseClient()
