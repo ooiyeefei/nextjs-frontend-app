@@ -1,23 +1,5 @@
-import AWS from 'aws-sdk'
 import { NextResponse } from 'next/server'
-
-const ses = new AWS.SES({
-  apiVersion: '2010-12-01',
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!
-  }
-})
-
-const sns = new AWS.SNS({
-  apiVersion: '2010-03-31',
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!
-  }
-})
+import { ses, sns } from '@/lib/aws/config'
 
 export async function POST(request: Request) {
   try {
@@ -41,11 +23,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof Error) {
-      // Now TypeScript knows error is of type Error
       console.log(error.message)
+      return NextResponse.json({ error: error.message }, { status: 500 })
     } else {
-      // Handle cases where the thrown value is not an Error object
       console.log('Unexpected error:', error)
+      return NextResponse.json({ error: 'Unknown error occurred' }, { status: 500 })
     }
   }
 }

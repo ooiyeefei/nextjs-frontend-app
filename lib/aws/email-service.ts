@@ -1,4 +1,4 @@
-import { createBrowserSupabaseClient } from '../../../lib/supabase/client'
+import { createBrowserSupabaseClient } from '../supabase/client'
 import { Reservation } from '@/types'
 
 export async function sendReservationEmail(

@@ -18,7 +18,11 @@ export function CancelReservationModal({ isOpen, onClose, reservation }: CancelR
     const supabase = createBrowserSupabaseClient()
 
     try {
-      await cancelReservation(reservation.reservation_id)
+      await Promise.all([
+        cancelReservation(reservation.reservation_id),
+        // Add a small delay to ensure toast is visible
+        new Promise(resolve => setTimeout(resolve, 1000))
+      ])
 
       toast({
         title: "Success",
@@ -26,6 +30,10 @@ export function CancelReservationModal({ isOpen, onClose, reservation }: CancelR
         variant: "success"
       })
       
+      setTimeout(() => {
+        window.location.reload()
+        onClose()
+      }, 1500)
     } catch (error) {
       console.error('Failed to cancel reservation:', error)
       toast({
@@ -35,8 +43,6 @@ export function CancelReservationModal({ isOpen, onClose, reservation }: CancelR
       })
     } finally {
       setIsLoading(false)
-      window.location.reload()
-      onClose()
     }
   }
 
