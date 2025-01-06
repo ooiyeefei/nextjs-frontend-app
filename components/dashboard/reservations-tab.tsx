@@ -9,6 +9,7 @@ import { Button } from "../ui/button"
 import { Status, Reservation, statusColors, ReservationsTabProps } from "@/types"
 import { ChevronRight, PlusCircle } from "lucide-react"
 import { Card, CardContent } from "../ui/card"
+import { cn } from "@/lib/utils"
 
 const StatusBadge = ({ status }: { status: Status }) => (
   <Badge 
