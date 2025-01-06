@@ -44,19 +44,37 @@ export async function POST(request: Request) {
     
     if (data.emailParams) {
       try {
-        // Verify email format before sending
-        if (!data.emailParams.Source.includes('@')) {
-          throw new Error('Invalid email format in Source field')
+        const sourceEmail = data.emailParams.Source
+        console.log('Email Format Debug:', {
+          sourceEmail,
+          hasAtSymbol: sourceEmail.includes('@'),
+          hasOpenBracket: sourceEmail.includes('<'),
+          hasCloseBracket: sourceEmail.includes('>'),
+          emailParams: data.emailParams
+        })
+    
+        if (!sourceEmail.includes('@') || !sourceEmail.includes('<') || !sourceEmail.includes('>')) {
+          throw new Error(`Invalid email format in Source field. Format should be: "Display Name" <email@domain.com>. Received: ${sourceEmail}`)
         }
         await ses.sendEmail(data.emailParams).promise()
       } catch (error) {
-        console.error('SES Error:', error)
+        const emailError = error as AWS.AWSError
+        console.error('SES Error:', {
+          sourceEmail: data.emailParams.Source,
+          error: emailError.message,
+          code: emailError.code,
+          region: AWS.config.region,
+          requestId: emailError.requestId
+        })
         return NextResponse.json({ 
-          error: error instanceof Error ? error.message : 'SES Error occurred',
-          details: error
+          error: emailError.message || 'SES Error occurred',
+          details: {
+            sourceEmail: data.emailParams.Source,
+            code: emailError.code
+          }
         }, { status: 500 })
       }
-    }
+    }    
 
     if (data.snsParams) {
       try {
