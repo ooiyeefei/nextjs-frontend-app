@@ -27,7 +27,7 @@ export async function sendReservationEmail(
 
     // Prepare email content
     const emailParams = {
-      Source: `${profile['restaurant-name']} <${process.env.AWS_SES_FROM_EMAIL}>`,
+      Source: `"${profile['restaurant-name']}" <${process.env.AWS_SES_FROM_EMAIL}>`,
       Destination: {
         ToAddresses: ['yeefeiooi+appNotification@gmail.com']
       },
