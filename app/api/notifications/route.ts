@@ -6,14 +6,14 @@ const credentials = new AWS.Credentials({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? ''
 })
 
-export const ses = new AWS.SES({
+const ses = new AWS.SES({
   apiVersion: '2010-12-01',
   region: process.env.AWS_REGION ?? 'ap-southeast-1',
   credentials,
   correctClockSkew: true
 })
 
-export const sns = new AWS.SNS({
+const sns = new AWS.SNS({
   apiVersion: '2010-03-31',
   region: process.env.AWS_REGION ?? 'ap-southeast-1',
   credentials
