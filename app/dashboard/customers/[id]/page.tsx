@@ -36,11 +36,23 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
   useEffect(() => {
     const fetchCustomerData = async () => {
       try {
+        console.log('Fetching customer data:', { 
+          id,
+          timestamp: new Date().toISOString()
+        })
         setIsLoading(true)
         const data = await getCustomerById(id)
+        console.log('Customer data received:', {
+          hasData: !!data,
+          timestamp: new Date().toISOString()
+        })
         setCustomerData(data)
       } catch (error) {
-        console.error('Error fetching customer:', error)
+        console.error('Error fetching customer:', {
+          error,
+          id,
+          timestamp: new Date().toISOString()
+        })
       } finally {
         setIsLoading(false)
       }

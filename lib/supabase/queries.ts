@@ -98,6 +98,10 @@ export async function getCustomers() {
     const supabase = createBrowserSupabaseClient()
     
     try {
+      console.log('Getting customer by ID:', { 
+        id,
+        timestamp: new Date().toISOString() 
+      })
       // Get business profile first
       const { data: businessProfile } = await supabase
         .from('business_profiles')
