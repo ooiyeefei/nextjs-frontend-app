@@ -44,23 +44,38 @@ export async function POST(request: Request) {
     
     if (data.emailParams) {
       try {
+        // Verify email format before sending
+        if (!data.emailParams.Source.includes('@')) {
+          throw new Error('Invalid email format in Source field')
+        }
         await ses.sendEmail(data.emailParams).promise()
       } catch (error) {
-        const emailError = error as AWS.AWSError
-        console.error('SES Error:', {
-          message: emailError.message,
-          code: emailError.code,
-          region: AWS.config.region,
-          requestId: emailError.requestId
-        })
+        console.error('SES Error:', error)
         return NextResponse.json({ 
-          error: emailError.message || 'SES Error occurred',
-          details: emailError.code
+          error: error instanceof Error ? error.message : 'SES Error occurred',
+          details: error
         }, { status: 500 })
       }
     }
 
-    // Rest of your code...
+    if (data.snsParams) {
+      try {
+        await sns.publish({
+          TopicArn: process.env.AWS_SNS_TOPIC_ARN,
+          Message: data.snsParams.message,
+          Subject: data.snsParams.subject,
+          MessageAttributes: data.snsParams.messageAttributes || {}
+        }).promise()
+      } catch (error) {
+        const snsError = error as AWS.AWSError // Type assertion for AWS errors
+        console.error('SNS Error:', snsError)
+        return NextResponse.json({ 
+          error: snsError.message || 'SNS Error occurred' 
+        }, { status: 500 })
+      }
+    }
+
+    return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Request Error:', error)
     return NextResponse.json({ 
