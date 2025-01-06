@@ -12,7 +12,10 @@ import { Card, CardContent } from "../ui/card"
 
 const StatusBadge = ({ status }: { status: Status }) => (
   <Badge 
-    className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${statusColors[status]}`}
+    className={cn(
+      "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium",
+      statusColors[status]
+    )}
   >
     {status}
   </Badge>
@@ -124,14 +127,14 @@ export function ReservationsTab({ onCancelReservation, onEditReservation }: Rese
                         handleStatusChange(reservation.reservation_id, value)
                       }}
                     >
-                      <SelectTrigger className="w-[140px]">
+                      <SelectTrigger className="w-[140px] bg-transparent">
                         <SelectValue>
                           <StatusBadge status={reservation.status} />
                         </SelectValue>
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-transparent">
                         {Object.entries(statusColors).map(([status, colorClass]) => (
-                          <SelectItem key={status} value={status}>
+                          <SelectItem key={status} value={status} className="bg-transparent">
                             <StatusBadge status={status as Status} />
                           </SelectItem>
                         ))}
