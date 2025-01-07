@@ -23,6 +23,12 @@ export default function CustomersPage() {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   useEffect(() => {
+
+    console.log('📄 Page Auth Check:', {
+      path: window.location.pathname,
+      timestamp: new Date().toISOString()
+    });
+
     const fetchCustomers = async () => {
       try {
         setIsLoading(true)
@@ -38,6 +44,11 @@ export default function CustomersPage() {
   }, [refreshTrigger])
 
   const handleRowClick = async (customerId: string) => {
+    console.log('🔄 Navigation Auth Check:', {
+      customerId,
+      timestamp: new Date().toISOString()
+    });
+    
     try {
       const customerData = await getCustomerById(customerId)
       if (customerData) {
