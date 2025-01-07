@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { getCustomerById } from "@/lib/supabase/queries"
 import { Reservation, Status, statusColors } from "@/types"
 import { createBrowserSupabaseClient } from '@/lib/supabase/client'
+import router from 'next/router'
 
 interface CustomerData {
   id: string
