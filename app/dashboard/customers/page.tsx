@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { getCustomers } from "@/lib/supabase/queries"
+import { getCustomerById, getCustomers } from "@/lib/supabase/queries"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -37,9 +37,24 @@ export default function CustomersPage() {
     fetchCustomers()
   }, [refreshTrigger])
 
-  const handleRowClick = (customerId: string) => {
-    router.push(`/dashboard/customers/${customerId}`)
+  const handleRowClick = async (customerId: string) => {
+    try {
+      const customerData = await getCustomerById(customerId)
+      if (customerData) {
+        router.push(`/dashboard/customers/${customerId}`)
+      } else {
+        console.error('Customer not found')
+      }
+    } catch (error) {
+      console.error('Navigation error:', {
+        error,
+        customerId,
+        timestamp: new Date().toISOString()
+      })
+    }
   }
+  
+  
 
   const refreshCustomers = async () => {
     try {

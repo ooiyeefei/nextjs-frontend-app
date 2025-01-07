@@ -9,6 +9,7 @@ import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getCustomerById } from "@/lib/supabase/queries"
 import { Reservation, Status, statusColors } from "@/types"
+import { createBrowserSupabaseClient } from '@/lib/supabase/client'
 
 interface CustomerData {
   id: string
@@ -32,6 +33,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
   const { id } = use(params)
   const [customerData, setCustomerData] = useState<CustomerData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const supabase = createBrowserSupabaseClient()
 
   useEffect(() => {
     const fetchCustomerData = async () => {
@@ -41,6 +43,14 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
           timestamp: new Date().toISOString()
         })
         setIsLoading(true)
+        
+        // handle auth state
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          console.log('No authenticated user found')
+          return
+        }
+
         const data = await getCustomerById(id)
         console.log('Customer data received:', {
           hasData: !!data,
