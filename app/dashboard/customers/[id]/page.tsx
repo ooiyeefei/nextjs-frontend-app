@@ -36,6 +36,21 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
   const supabase = createBrowserSupabaseClient()
 
   useEffect(() => {
+    const supabase = createBrowserSupabaseClient()
+    
+    // Subscribe to auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        router.push('/login')
+      }
+    })
+  
+    return () => {
+      subscription?.unsubscribe()
+    }
+  }, [])
+  
+  useEffect(() => {
     const fetchCustomerData = async () => {
       try {
         console.log('Fetching customer data:', { 
