@@ -44,18 +44,16 @@ export default function CustomersPage() {
   }, [refreshTrigger])
 
   const handleRowClick = async (customerId: string) => {
-    console.log('🔄 Navigation Auth Check:', {
+    console.log('🔄 Navigation Event:', {
       customerId,
       timestamp: new Date().toISOString()
     });
-    
+
     try {
-      const customerData = await getCustomerById(customerId)
-      if (customerData) {
-        router.push(`/dashboard/customers/${customerId}`)
-      } else {
-        console.error('Customer not found')
-      }
+      router.push(`/dashboard/customers/${customerId}`, {
+        // Prevent triggering unnecessary data fetching
+        scroll: false
+      })
     } catch (error) {
       console.error('Navigation error:', {
         error,
