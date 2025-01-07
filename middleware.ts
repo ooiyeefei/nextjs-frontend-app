@@ -54,7 +54,8 @@ export async function middleware(request: NextRequest) {
   })
 
   if (!user && (
-    request.nextUrl.pathname.startsWith('/dashboard')
+    request.nextUrl.pathname.startsWith('/dashboard')  ||
+    request.nextUrl.pathname.includes('/customers/')
   )) {
     console.log('Redirecting to login:', { 
       from: request.nextUrl.pathname,
