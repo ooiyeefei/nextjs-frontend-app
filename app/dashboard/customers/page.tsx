@@ -44,16 +44,14 @@ export default function CustomersPage() {
   }, [refreshTrigger])
 
   const handleRowClick = async (customerId: string) => {
-    console.log('🔄 Navigation Event:', {
+    console.log('🚀 Navigation Start:', {
       customerId,
-      timestamp: new Date().toISOString()
-    });
+      timestamp: new Date().toISOString(),
+      currentPath: window.location.pathname
+    })
 
     try {
-      router.push(`/dashboard/customers/${customerId}`, {
-        // Prevent triggering unnecessary data fetching
-        scroll: false
-      })
+      router.push(`/dashboard/customers/${customerId}`)
     } catch (error) {
       console.error('Navigation error:', {
         error,

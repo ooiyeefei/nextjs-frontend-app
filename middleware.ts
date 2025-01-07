@@ -10,10 +10,12 @@ export async function middleware(request: NextRequest) {
     }
   })
 
-  console.log('🔒 Middleware Auth Check:', {
+  console.log('🔐 Middleware Check:', {
     path: request.nextUrl.pathname,
-    timestamp: new Date().toISOString()
-  });
+    timestamp: new Date().toISOString(),
+    hasAuthCookie: !!request.cookies.get('sb-access-token'),
+    method: request.method
+  })
   
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

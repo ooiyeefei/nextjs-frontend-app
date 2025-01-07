@@ -37,19 +37,30 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
   const supabase = createBrowserSupabaseClient()
 
   useEffect(() => {
+    console.log('🔍 Customer Detail Mount:', {
+      id,
+      timestamp: new Date().toISOString(),
+      pathname: window.location.pathname
+    })
+
     const supabase = createBrowserSupabaseClient()
     
     // Subscribe to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        router.push('/login')
-      }
+    console.log('🔄 Auth State Change:', {
+      event,
+      hasSession: !!session,
+      timestamp: new Date().toISOString()
     })
+  })
   
     return () => {
+      console.log('♻️ Customer Detail Cleanup:', {
+        timestamp: new Date().toISOString()
+      })
       subscription?.unsubscribe()
     }
-  }, [])
+  }, [id])
   
   useEffect(() => {
     const fetchCustomerData = async () => {
