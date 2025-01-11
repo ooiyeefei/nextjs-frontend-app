@@ -338,10 +338,14 @@ export async function updateReservationStatus(id: string, status: string) {
     try {
       const { data: businessProfile } = await supabase
         .from('business_profiles')
-        .select('id')
+        .select('*') 
         .single()
   
       if (!businessProfile) throw new Error('No business profile found')
+
+      if (!businessProfile['restaurant-name']) {
+        throw new Error('Please set up your restaurant profile before creating reservations')
+      }
   
       // Call the stored procedure in supabase to check if customers exist, if not create new customer record
       const { data, error } = await supabase

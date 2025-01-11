@@ -77,7 +77,7 @@ export async function sendReservationEmail(
         },
         'AWS.SNS.SMS.SenderID': {
           DataType: 'String',
-          StringValue: profile['restaurant-name']
+          StringValue: (profile['restaurant-name'] || 'Restaurant')
             .replace(/[^a-zA-Z0-9-]/g, '')
             .substring(0, 11)
             .replace(/^-|-$/g, 'R')
