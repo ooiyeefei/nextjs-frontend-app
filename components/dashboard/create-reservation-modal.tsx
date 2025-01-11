@@ -33,6 +33,10 @@ export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateRes
     const form = event.target as HTMLFormElement
     const formData = new FormData(form)
 
+    if (!formData.get('email') || !formData.get('name')) {
+      throw new Error('Required fields are missing');
+    }
+
     console.log('Form Data:', {
       special_requests: formData.get('special_requests'),
       dietary_restrictions: formData.get('dietary_restrictions')
@@ -66,7 +70,7 @@ export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateRes
         special_requests: formData.get('special_requests') as string || null,
         dietary_restrictions: formData.get('dietary_restrictions') as string || null,
         party_size: partySize
-      }
+      }      
 
       console.log('Processed reservation data:', reservationData)
       const result = await createReservation(reservationData)
