@@ -14,6 +14,7 @@ import { getProductCategories, moveProductImage, updateProduct, uploadProductIma
 import { Product } from "@/types"
 import { UploadButton } from "../ui/upload-button"
 import { createBrowserSupabaseClient } from "@/lib/supabase/client"
+import { X } from "lucide-react"
 
 type OptionType = {
     value: string;
@@ -154,7 +155,15 @@ export function EditProductModal({ isOpen, onClose, product, onSuccess }: EditPr
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+            <div className="pr-6">
+                <button 
+                    onClick={onClose} 
+                    className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none bg-background"
+                    >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+                </button>
                 <DialogHeader>
                     <DialogTitle>Edit Product</DialogTitle>
                 </DialogHeader>
@@ -331,6 +340,7 @@ export function EditProductModal({ isOpen, onClose, product, onSuccess }: EditPr
                         </Button>
                     </DialogFooter>
                 </form>
+                </div>
             </DialogContent>
         </Dialog>
     )

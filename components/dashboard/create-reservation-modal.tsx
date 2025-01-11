@@ -12,12 +12,15 @@ import { X } from 'lucide-react'
 import { createReservation } from "@/lib/supabase/queries"
 import { toast } from "@/components/ui/toast"
 import { CreateReservationModalProps, Status } from "@/types"
+import { format } from "date-fns"
 
 export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateReservationModalProps) {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [status, setStatus] = useState<Status>('confirmed')
 
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
+  const [showCalendar, setShowCalendar] = useState(false)
+
 
   const handleSubmit = async (event: React.FormEvent) => {
       event.preventDefault();
@@ -28,7 +31,8 @@ export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateRes
       // Check for required fields
       const email = formData.get('email');
       const name = formData.get('name');
-      if (!email || !name) {
+      const phone = formData.get('phone');
+      if (!email || !name || !phone) {
         throw new Error('Required fields are missing');
       }
 
@@ -36,6 +40,7 @@ export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateRes
       console.log('Form Data:', {
         email,
         name,
+        phone,
         special_requests: formData.get('special_requests'),
         dietary_restrictions: formData.get('dietary_restrictions'),
         partySize: formData.get('partySize'),
@@ -122,13 +127,13 @@ export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateRes
               <Label htmlFor="name" className="text-right">
                 Name
               </Label>
-              <Input id="name" name="name" className="col-span-3" />
+              <Input id="name" name="name" className="col-span-3" required aria-required="true"/>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="email" className="text-right">
                 Email
               </Label>
-              <Input id="email" name="email" type="email" className="col-span-3" required />
+              <Input id="email" name="email" type="email" className="col-span-3" required aria-required="true"/>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="phone" className="text-right">
@@ -140,6 +145,9 @@ export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateRes
                 type="tel"
                 className="col-span-3"
                 placeholder="Enter phone number"
+                required
+                aria-required="true"
+                pattern="[0-9]{8,}"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -147,23 +155,38 @@ export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateRes
                 Date
               </Label>
               <div className="col-span-3">
-                <div className="flex justify-start">
-                  <div className="w-[320px] sm:w-[350px]">
-                    <input 
-                      type="hidden" 
-                      id="date" 
-                      name="date" 
-                      value={date ? date.toISOString().split('T')[0] : ''} 
-                    />
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={setDate}
-                      defaultMonth={currentMonth}
-                      className="rounded-md border"
+                {date ? (
+                  <div className="mb-2">
+                    <Input 
+                      readOnly
+                      value={format(date, 'dd MMM yyyy (EEEE)')}
+                      className="cursor-pointer"
+                      onClick={() => setShowCalendar(true)}
                     />
                   </div>
-                </div>
+                ) : null}
+                {showCalendar && (
+                  <div className="flex justify-start">
+                    <div className="w-[320px] sm:w-[350px]">
+                      <input 
+                        type="hidden" 
+                        id="date" 
+                        name="date" 
+                        value={date ? date.toISOString().split('T')[0] : ''} 
+                      />
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={(selectedDate) => {
+                          setDate(selectedDate);
+                          setShowCalendar(false);
+                        }}
+                        defaultMonth={currentMonth}
+                        className="rounded-md border"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">

@@ -41,7 +41,7 @@ type SortConfig = {
 
 type ReservationData = {
   reservation_id: string;
-  customer_name?: string;
+  customer_name: string;
   customer_email: string;
   phone: string;
   reservation_time: string;
@@ -149,6 +149,7 @@ export default function ReservationsPage() {
   }
 
   const handleEditReservation = (reservation: Reservation) => {
+    console.log('Editing reservation:', reservation) // For debugging
     setSelectedReservation(reservation)
     setEditModalOpen(true)
   }
@@ -257,7 +258,8 @@ export default function ReservationsPage() {
            { key: 'party_size', label: 'Party Size' },
            { key: 'status', label: 'Status' },
            { key: 'special_requests', label: 'Special Requests' },
-           { key: 'dietary_restrictions', label: 'Dietary Restrictions' }
+           { key: 'dietary_restrictions', label: 'Dietary Restrictions' },
+           { key: 'actions', label: 'Actions' }
          ].map(column => (
            <TableHead
              key={column.key}
@@ -290,6 +292,24 @@ export default function ReservationsPage() {
              </TableCell>
              <TableCell>{reservation.special_requests}</TableCell>
              <TableCell>{reservation.dietary_restrictions}</TableCell>
+             <TableCell className="text-center">
+              <div className="flex justify-center gap-3">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => handleEditReservation(reservation)}
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleCancelReservation(reservation)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </TableCell>
            </TableRow>
          ))}
               </TableBody>
@@ -311,7 +331,8 @@ export default function ReservationsPage() {
                     { key: 'party_size', label: 'Party Size' },
                     { key: 'status', label: 'Status' },
                     { key: 'special_requests', label: 'Special Requests' },
-                    { key: 'dietary_restrictions', label: 'Dietary Restrictions' }
+                    { key: 'dietary_restrictions', label: 'Dietary Restrictions' },
+                    { key: 'actions', label: 'Actions' }
                   ].map(column => (
                     <TableHead
                       key={column.key}
@@ -344,6 +365,24 @@ export default function ReservationsPage() {
                     </TableCell>
                     <TableCell>{reservation.special_requests ?? '-'}</TableCell>
                     <TableCell>{reservation.dietary_restrictions ?? '-'}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex justify-center gap-3">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleEditReservation(reservation)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleCancelReservation(reservation)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -362,12 +401,17 @@ export default function ReservationsPage() {
         reservation={selectedReservation}
         onReservationCancelled={fetchReservations}
       />
-      <EditReservationModal
-        isOpen={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
-        reservation={selectedReservation}
-        onReservationUpdated={fetchReservations}
-      />
+      {selectedReservation && editModalOpen && (
+        <EditReservationModal
+          isOpen={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false)
+            setSelectedReservation(null)
+          }}
+          reservation={selectedReservation}
+          onReservationUpdated={fetchReservations}
+        />
+      )}
     </div>
   </div>
   )
