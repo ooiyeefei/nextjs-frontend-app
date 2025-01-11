@@ -343,21 +343,11 @@ export async function updateReservationStatus(id: string, status: string) {
         .single()
   
       if (!businessProfile) {
-        toast({
-          title: "Error",
-          description: "No business profile found",
-          variant: "destructive"
-        })
-        return
+        throw new Error('No business profile found')
       }
-
+    
       if (!businessProfile['restaurant-name']) {
-        toast({
-          title: "Error",
-          description: "Please set up your restaurant profile before creating reservations",
-          variant: "destructive"
-        })
-        return
+        throw new Error('Restaurant name is required in your business profile')
       }
   
       // Call the stored procedure in supabase to check if customers exist, if not create new customer record
@@ -435,7 +425,7 @@ export async function updateReservationStatus(id: string, status: string) {
       statusCode: error?.statusCode,
       fullError: JSON.stringify(error, null, 2)
     })
-    throw error
+    throw new Error(error.message || 'Failed to create reservation')
   }
 }
 

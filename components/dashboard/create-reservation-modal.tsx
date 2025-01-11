@@ -104,7 +104,7 @@ export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateRes
         });
         toast({
           title: "Error",
-          description: error instanceof Error ? error.message : "Failed to create reservation",
+          description: error.message || "Failed to create reservation",
           variant: "destructive"
         });
       }
