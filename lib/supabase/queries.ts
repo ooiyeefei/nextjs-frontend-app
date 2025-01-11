@@ -346,7 +346,7 @@ export async function updateReservationStatus(id: string, status: string) {
         throw new Error('No business profile found')
       }
     
-      if (!businessProfile['restaurant-name']) {
+      if (!businessProfile['restaurant_name']) {
         throw new Error('Restaurant name is required in your business profile')
       }
   
@@ -390,7 +390,7 @@ export async function updateReservationStatus(id: string, status: string) {
 
     if (formattedData) {
       try {
-        if (!businessProfile['restaurant-name']) {
+        if (!businessProfile['restaurant_name']) {
           toast({
             title: "Warning",
             description: "Restaurant name not set. Notification emails will not be sent.",
@@ -630,11 +630,11 @@ export async function upsertBusinessProfile(profileData: Partial<BusinessProfile
       .upsert({
         id: existingProfile?.id, // Include existing ID if updating
         user_id: user.id,
-        'restaurant-name': profileData['restaurant-name'],
+        'restaurant_name': profileData['restaurant_name'],
         phone: profileData.phone,
         website: profileData.website,
         address: profileData.address,
-        'operating-hours': profileData['operating-hours'],
+        'operating_hours': profileData['operating_hours'],
         'capacity_info': profileData['capacity_info'],
         cancellation_policy: profileData.cancellation_policy,
         refund_policy: profileData.refund_policy,

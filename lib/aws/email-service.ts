@@ -19,7 +19,7 @@ export async function sendReservationEmail(
       throw new Error('Please set up your restaurant profile before sending notifications')
     }
 
-    if (!profile['restaurant-name']) {
+    if (!profile['restaurant_name']) {
       throw new Error('Restaurant name is required in your business profile')
     }
 
@@ -33,7 +33,7 @@ export async function sendReservationEmail(
 
     // Prepare email content
     const emailParams = {
-      Source: `"${profile['restaurant-name']?.trim() || 'Restaurant'}" <yeefeiooi+appNotification@gmail.com>`,
+      Source: `"${profile['restaurant_name']?.trim() || 'Restaurant'}" <yeefeiooi+appNotification@gmail.com>`,
       Destination: {
         ToAddresses: ['yeefeiooi+appNotification@gmail.com']
       },
@@ -53,7 +53,7 @@ export async function sendReservationEmail(
                 ${reservation.status ? `<li>Status: ${reservation.status}</li>` : ''}
                 ${reservation.special_requests ? `<li>Special Requests: ${reservation.special_requests}</li>` : ''}
               </ul>
-              <p>Restaurant: ${profile['restaurant-name']}</p>
+              <p>Restaurant: ${profile['restaurant_name']}</p>
               ${profile.address ? `<p>Address: ${profile.address}</p>` : ''}
               ${profile.phone ? `<p>Contact: ${profile.phone}</p>` : ''}
             `,
@@ -71,11 +71,11 @@ export async function sendReservationEmail(
         Email: ${reservation.customer_email}
         Date & Time: ${new Date(reservation.reservation_time).toLocaleString()}
         Status: ${reservation.status}
-        Restaurant: ${profile['restaurant-name']}
+        Restaurant: ${profile['restaurant_name']}
 
         Reservation ID: ${reservation.reservation_id}
       `.trim(),
-      subject: `${profile['restaurant-name']} - New ${type} Reservation`,
+      subject: `${profile['restaurant_name']} - New ${type} Reservation`,
       messageAttributes: {
         'AWS.SNS.SMS.SMSType': {
           DataType: 'String',
@@ -83,7 +83,7 @@ export async function sendReservationEmail(
         },
         'AWS.SNS.SMS.SenderID': {
           DataType: 'String',
-          StringValue: (profile['restaurant-name'] || 'Restaurant')
+          StringValue: (profile['restaurant_name'] || 'Restaurant')
             .replace(/[^a-zA-Z0-9-]/g, '')
             .substring(0, 11)
             .replace(/^-|-$/g, 'R')

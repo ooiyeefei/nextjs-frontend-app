@@ -38,11 +38,11 @@ export interface Reservation {
 
 export interface BusinessProfile {
     id?: string;
-    'restaurant-name': string;
+    'restaurant_name': string;
     phone?: string | null;
     address?: string | null;
     website?: string | null;
-    'operating-hours'?: Record<string, any> | null;
+    'operating_hours'?: Record<string, any> | null;
     'capacity_info'?: Record<string, any> | null;
     user_id: string;
     cancellation_policy?: string | null;

@@ -84,7 +84,7 @@ export default function ProfilePage() {
         if (profile) {
           // Profile exists, set form data
           setFormData({
-            restaurantName: profile['restaurant-name'] || "",
+            restaurantName: profile['restaurant_name'] || "",
             phone: profile.phone || "",
             website: profile.website || "",
             address: profile.address || "",
@@ -178,11 +178,11 @@ export default function ProfilePage() {
     setLoading(true)
     try {
       const profileData = {
-        'restaurant-name': formData.restaurantName,  // Required field
+        'restaurant_name': formData.restaurantName,  // Required field
         phone: formData.phone,
         website: formData.website,
         address: formData.address,
-        'operating-hours': schedule,
+        'operating_hours': schedule,
         'capacity_info': null,
         cancellation_policy: formData.cancellationPolicy,
         refund_policy: formData.refundPolicy,
@@ -232,7 +232,7 @@ export default function ProfilePage() {
     setLoading(true);
     try {
       const profileData = {
-        'restaurant-name': formData.restaurantName, // Required field
+        'restaurant_name': formData.restaurantName, // Required field
         cancellation_policy: formData.cancellationPolicy,
         refund_policy: formData.refundPolicy,
         data_usage_disclaimer: formData.dataUsageDisclaimer
@@ -264,8 +264,8 @@ export default function ProfilePage() {
       const existingProfile = await getBusinessProfile()
 
       await upsertBusinessProfile({
-        'restaurant-name': existingProfile['restaurant-name'],  // Required field
-        'operating-hours': schedule,
+        'restaurant_name': existingProfile['restaurant_name'],  // Required field
+        'operating_hours': schedule,
         phone: existingProfile.phone,
         website: existingProfile.website,
         address: existingProfile.address,
