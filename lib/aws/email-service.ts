@@ -27,7 +27,7 @@ export async function sendReservationEmail(
 
     // Prepare email content
     const emailParams = {
-      Source: `"${profile['restaurant-name'].trim()}" <yeefeiooi+appNotification@gmail.com>`,
+      Source: `"${profile['restaurant-name']?.trim() || 'Restaurant'}" <yeefeiooi+appNotification@gmail.com>`,
       Destination: {
         ToAddresses: ['yeefeiooi+appNotification@gmail.com']
       },
