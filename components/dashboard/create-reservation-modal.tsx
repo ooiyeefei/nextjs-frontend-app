@@ -11,15 +11,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { X } from 'lucide-react'
 import { createReservation } from "@/lib/supabase/queries"
 import { toast } from "@/components/ui/toast"
-
-
-type Status = 'arriving-soon' | 'late' | 'no-show' | 'confirmed' | 'seated' | 'completed'
-
-interface CreateReservationModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess?: () => Promise<void>
-}
+import { CreateReservationModalProps, Status } from "@/types"
 
 export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateReservationModalProps) {
   const [date, setDate] = useState<Date | undefined>(new Date())

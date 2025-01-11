@@ -22,6 +22,7 @@ export interface Customer {
   reservation_id?: string | null  
 }
 export interface Reservation {
+    customer_name: string | undefined;
     reservation_id: string
     reservation_time: string
     customer_email: string
@@ -114,17 +115,25 @@ export interface ReservationsTabProps {
     onCancelReservation: (reservation: Reservation) => void;
     onEditReservation: (reservation: Reservation) => void;
   }
+export interface CreateReservationModalProps {
+    isOpen: boolean
+    onClose: () => void
+    onSuccess?: () => Promise<void>
+    onReservationCreated?: () => Promise<void>;
+  }
 
 export interface EditReservationModalProps {
     isOpen: boolean
     onClose: () => void
     reservation: Reservation | null
+    onReservationUpdated?: () => Promise<void>;
 }
 
 export interface CancelReservationModalProps {
     isOpen: boolean
     onClose: () => void
     reservation: Reservation | null
+    onReservationCancelled?: () => Promise<void>;
   }
 
 export interface TableAvailabilityProps {

@@ -19,6 +19,7 @@
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
     "@tailwindcss/forms": "^0.5.9",
+    "@tanstack/react-table": "^8.20.6",
     "@vercel/postgres": "^0.10.0",
     "autoprefixer": "10.4.20",
     "aws-sdk": "^2.1692.0",
@@ -26,6 +27,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "lodash": "^4.17.21",
     "lucide-react": "^0.468.0",
     "next": "^15.1.0",
     "next-auth": "5.0.0-beta.19",
@@ -42,6 +44,7 @@
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
+    "@types/lodash": "^4.17.14",
     "@types/node": "22.10.1",
     "@types/react": "19.0.0",
     "@types/react-dom": "19.0.0",
