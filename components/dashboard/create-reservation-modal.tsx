@@ -28,87 +28,87 @@ export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateRes
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
 
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
-    
-    const form = event.target as HTMLFormElement
-    const formData = new FormData(form)
-
-    if (!formData.get('email') || !formData.get('name')) {
-      throw new Error('Required fields are missing');
-    }
-
-    console.log('Form Data:', {
-      special_requests: formData.get('special_requests'),
-      dietary_restrictions: formData.get('dietary_restrictions')
-    })
-    
-    const partySize = parseInt(formData.get('partySize') as string, 10)
-    if (partySize < 1) {
-      alert('Party size must be a positive number greater than 0.')
-      return
-    }
-  
-    try {
-      const date = formData.get('date') as string
-      const time = formData.get('time') as string
-      // Format the timestamp correctly
-      const reservationTime = new Date(`${date}T${time}`).toISOString()
-
-      console.log('Form submission data:', {
-        date,
-        time,
-        formattedTime: reservationTime,
-        rawFormData: Object.fromEntries(formData.entries())
-      })
-
-      const reservationData = {
-        customer_email: formData.get('email') as string,
-        customer_name: formData.get('name') as string || null,
-        phone: formData.get('phone') as string || null,
-        reservation_time: reservationTime,
-        status: status,
-        special_requests: formData.get('special_requests') as string || null,
-        dietary_restrictions: formData.get('dietary_restrictions') as string || null,
-        party_size: partySize
-      }      
-
-      console.log('Processed reservation data:', reservationData)
-      const result = await createReservation(reservationData)
-      console.log('Reservation creation result:', result)
-
-      toast({
-        title: "Success",
-        description: "Reservation created successfully",
-        variant: "success"
-      })
+      event.preventDefault();
       
-      if (onSuccess) {
-        await onSuccess()
-      }     
-      
-      // Optionally refresh the reservations list
-      window.location.reload()
-      onClose()
-    } catch (error: any) {
-      console.error('Reservation creation failed:', {
-        error: {
-          name: error?.name,
-          message: error?.message,
-          status: error?.status,
-          code: error?.code,
-          details: error?.details,
-          hint: error?.hint
-        },
-        formData: Object.fromEntries(formData.entries()),
-        timestamp: new Date().toISOString()
-      })
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create reservation",
-        variant: "destructive"
-        })
-    }
-  }
+      const form = event.target as HTMLFormElement;
+      const formData = new FormData(form);
+
+      // Check for required fields
+      const email = formData.get('email');
+      const name = formData.get('name');
+      if (!email || !name) {
+        throw new Error('Required fields are missing');
+      }
+
+      // Log form data for debugging
+      console.log('Form Data:', {
+        email,
+        name,
+        special_requests: formData.get('special_requests'),
+        dietary_restrictions: formData.get('dietary_restrictions'),
+        partySize: formData.get('partySize'),
+        date: formData.get('date'),
+        time: formData.get('time')
+      });
+
+      const partySize = parseInt(formData.get('partySize') as string, 10);
+      if (partySize < 1) {
+        alert('Party size must be a positive number greater than 0.');
+        return;
+      }
+
+      try {
+        const date = formData.get('date') as string;
+        const time = formData.get('time') as string;
+        const reservationTime = new Date(`${date}T${time}`).toISOString();
+
+        const reservationData = {
+          customer_email: email as string,
+          customer_name: name as string || null,
+          phone: formData.get('phone') as string || null,
+          reservation_time: reservationTime,
+          status: status,
+          special_requests: formData.get('special_requests') as string || null,
+          dietary_restrictions: formData.get('dietary_restrictions') as string || null,
+          party_size: partySize
+        };
+
+        console.log('Processed reservation data:', reservationData);
+        const result = await createReservation(reservationData);
+        console.log('Reservation creation result:', result);
+
+        toast({
+          title: "Success",
+          description: "Reservation created successfully",
+          variant: "success"
+        });
+
+        if (onSuccess) {
+          await onSuccess();
+        }
+
+        window.location.reload();
+        onClose();
+      } catch (error: any) {
+        console.error('Reservation creation failed:', {
+          error: {
+            name: error?.name,
+            message: error?.message,
+            status: error?.status,
+            code: error?.code,
+            details: error?.details,
+            hint: error?.hint
+          },
+          formData: Object.fromEntries(formData.entries()),
+          timestamp: new Date().toISOString()
+        });
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to create reservation",
+          variant: "destructive"
+        });
+      }
+  };
   
 
   return (
