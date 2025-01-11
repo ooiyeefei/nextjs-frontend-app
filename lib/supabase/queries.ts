@@ -401,8 +401,12 @@ export async function updateReservationStatus(id: string, status: string) {
     if (formattedData) {
       try {
         if (!businessProfile['restaurant-name']) {
-          console.error('Email not sent: Restaurant name not set')
-          return
+          toast({
+            title: "Warning",
+            description: "Restaurant name not set. Notification emails will not be sent.",
+            variant: "destructive"
+          })
+          return formattedData
         }
         await sendReservationEmail(
           businessProfile.id,
@@ -411,8 +415,12 @@ export async function updateReservationStatus(id: string, status: string) {
           formattedData
         )
       } catch (emailError) {
-        // Log but don't throw since reservation was created
         console.error('Email notification failed:', emailError)
+        toast({
+          title: "Note",
+          description: "Reservation created but notification email failed to send",
+          variant: "destructive"
+        })
       }
     }
   

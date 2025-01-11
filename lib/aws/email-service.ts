@@ -15,7 +15,13 @@ export async function sendReservationEmail(
       .select('*')
       .single()
 
-    if (!profile) throw new Error('Business profile not found')
+    if (!profile) {
+      throw new Error('Please set up your restaurant profile before sending notifications')
+    }
+
+    if (!profile['restaurant-name']) {
+      throw new Error('Restaurant name is required in your business profile')
+    }
 
     const subject = {
       create: 'Reservation Confirmation',
@@ -102,8 +108,7 @@ export async function sendReservationEmail(
     }
 
   } catch (error) {
-    if (error instanceof Error) {
-    }
-    throw error
+    console.error('Email notification failed:', error)
+    return null
   }
 }
