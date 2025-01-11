@@ -1,15 +1,14 @@
 // Base Types and Enums
-export type Status = 'arriving-soon' | 'late' | 'no-show' | 'confirmed' | 'seated' | 'completed'
+export type Status = 'arriving-soon' | 'late' | 'no-show' | 'confirmed' | 'seated' | 'completed';
 
-// UI Constants
-export const statusColors: Record<Status, string> = {
-    'arriving-soon': '!bg-yellow-500 !text-white',
-    'late': '!bg-red-500 !text-white',
-    'no-show': '!bg-gray-500 !text-white',
-    'confirmed': '!bg-blue-500 !text-white',
-    'seated': '!bg-green-500 !text-white',
-    'completed': '!bg-green-500 !text-white',
-  }
+export const statusColors = {
+  'arriving-soon': 'bg-status-yellow',
+  late: 'bg-status-red',
+  'no-show': 'bg-status-gray',
+  confirmed: 'bg-status-blue',
+  seated: 'bg-status-green',
+  completed: 'bg-status-green',
+};
 
 // Data Models
 export interface Customer {

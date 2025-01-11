@@ -172,3 +172,25 @@
 .day-section:nth-child(even) {
   background-color: rgba(30, 41, 59, 0.3);  /* Lighter shade */
 }
+
+.select-content {
+  @apply bg-background border;
+}
+
+.select-item {
+  @apply hover:bg-accent/50;
+}
+
+.select-item[data-highlighted] {
+  @apply bg-transparent;
+}
+
+/* Override any default badge styles */
+.badge-status {
+  @apply !text-white;
+}
+
+/* Ensure hover states don't override background colors */
+.select-item:hover .badge-status {
+  @apply !bg-opacity-100;
+}

@@ -7,6 +7,13 @@ const config: Config = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './lib/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  safelist: [
+    'bg-status-yellow',
+    'bg-status-red',
+    'bg-status-gray',
+    'bg-status-blue',
+    'bg-status-green',
+  ],
   theme: {
   	container: {
   		center: true,
@@ -59,7 +66,14 @@ const config: Config = {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
-  			}
+  			},
+			  status: {
+				yellow: '#EAB308', // yellow-500
+				red: '#EF4444',    // red-500
+				gray: '#6B7280',   // gray-500
+				blue: '#3B82F6',   // blue-500
+				green: '#22C55E',  // green-500
+			  }
   		},
   		borderRadius: {
   			lg: 'var(--radius)',

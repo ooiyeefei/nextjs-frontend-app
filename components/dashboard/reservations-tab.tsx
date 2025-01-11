@@ -14,19 +14,29 @@ import { cn } from "@/lib/utils"
 const StatusBadge = ({ status }: { status: Status }) => (
   <Badge 
     className={cn(
-      "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium",
-      statusColors[status]
+      "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-white",
+      {
+        'bg-yellow-500': status === 'arriving-soon',
+        'bg-red-500': status === 'late',
+        'bg-gray-500': status === 'no-show',
+        'bg-blue-500': status === 'confirmed',
+        'bg-green-500': status === 'seated' || status === 'completed'
+      }
     )}
   >
-    {status}
+    {status.split('-').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ')}
   </Badge>
 )
+
 
 export function ReservationsTab({ onCancelReservation, onEditReservation }: ReservationsTabProps) {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [status, setStatus] = useState<Status>('confirmed'); 
 
   useEffect(() => {
     fetchReservations()
@@ -121,26 +131,27 @@ export function ReservationsTab({ onCancelReservation, onEditReservation }: Rese
                 <TableCell className="text-center">{reservation.party_size}</TableCell>
                 <TableCell className="text-center">
                   <div className="flex justify-center">
-                    <Select
-                      value={reservation.status}
-                      onValueChange={(value: Status) => {
-                        console.log('Selected reservation ID:', reservation.reservation_id) // Debug log
-                        handleStatusChange(reservation.reservation_id, value)
-                      }}
-                    >
-                      <SelectTrigger className="w-[140px] bg-transparent">
-                        <SelectValue>
-                          <StatusBadge status={reservation.status} />
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent className="bg-transparent">
-                        {Object.entries(statusColors).map(([status, colorClass]) => (
-                          <SelectItem key={status} value={status} className="bg-transparent">
-                            <StatusBadge status={status as Status} />
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <Select 
+                    value={reservation.status} 
+                    onValueChange={(value) => handleStatusChange(reservation.reservation_id, value as Status)}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue>
+                        <StatusBadge status={reservation.status} />
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(statusColors).map(([value, _]) => (
+                        <SelectItem 
+                          key={value} 
+                          value={value}
+                          className="relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2"
+                        >
+                          <StatusBadge status={value as Status} />
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   </div>
                 </TableCell>
                 <TableCell className="text-center">{reservation.special_requests || '-'}</TableCell>

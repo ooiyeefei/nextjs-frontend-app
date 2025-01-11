@@ -426,7 +426,10 @@ export async function updateReservation(reservationId: string, updateData: Parti
       `)
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase Update Error:', error);
+      throw new Error(error.message);
+    }
 
     if (data) {
       const formattedReservation: Reservation = {
@@ -452,6 +455,7 @@ export async function updateReservation(reservationId: string, updateData: Parti
       )
     }
 
+    console.log('Supabase Update Success:', data);
     return data
   } catch (error: any) {
     console.error('Failed to update reservation:', {
