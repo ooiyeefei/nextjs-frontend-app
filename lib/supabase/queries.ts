@@ -341,10 +341,22 @@ export async function updateReservationStatus(id: string, status: string) {
         .select('*') 
         .single()
   
-      if (!businessProfile) throw new Error('No business profile found')
+      if (!businessProfile) {
+        toast({
+          title: "Error",
+          description: "No business profile found",
+          variant: "destructive"
+        })
+        return
+      }
 
       if (!businessProfile['restaurant-name']) {
-        throw new Error('Please set up your restaurant profile before creating reservations')
+        toast({
+          title: "Error",
+          description: "Please set up your restaurant profile before creating reservations",
+          variant: "destructive"
+        })
+        return
       }
   
       // Call the stored procedure in supabase to check if customers exist, if not create new customer record
