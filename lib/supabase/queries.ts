@@ -2,6 +2,7 @@ import { BusinessProfile, CreateProductData, CreateReservationData, Customer, Da
 import { createBrowserSupabaseClient } from './client'
 import { format } from 'date-fns';
 import { sendReservationEmail } from "../aws/email-service";
+import { toast } from "@/components/ui/toast";
 
 export async function getReservations() {
   const supabase = createBrowserSupabaseClient()
@@ -398,12 +399,21 @@ export async function updateReservationStatus(id: string, status: string) {
     } : null
 
     if (formattedData) {
-      await sendReservationEmail(
-        businessProfile.id,
-        'create',
-        businessProfile,
-        formattedData
-      )
+      try {
+        if (!businessProfile['restaurant-name']) {
+          console.error('Email not sent: Restaurant name not set')
+          return
+        }
+        await sendReservationEmail(
+          businessProfile.id,
+          'create',
+          businessProfile,
+          formattedData
+        )
+      } catch (emailError) {
+        // Log but don't throw since reservation was created
+        console.error('Email notification failed:', emailError)
+      }
     }
   
       return formattedData
