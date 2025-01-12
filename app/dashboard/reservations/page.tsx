@@ -7,7 +7,7 @@ import { PlusCircle } from 'lucide-react'
 import { CreateReservationModal } from "@/components/dashboard/create-reservation-modal"
 import { CancelReservationModal } from "@/components/dashboard/cancel-reservation-modal"
 import { EditReservationModal } from "@/components/dashboard/edit-reservation-modal"
-import { Status, Reservation, statusColors, ReservationsTabProps } from "@/types"
+import { Status, Reservation, SortConfig } from "@/types"
 import { getReservations, updateReservationStatus } from "@/lib/supabase/queries"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -33,11 +33,6 @@ const StatusBadge = ({ status }: { status: Status }) => (
     ).join(' ')}
   </Badge>
 )
-
-type SortConfig = {
-  key: string | null;  // Allow both string and null
-  direction: 'asc' | 'desc';  // Restrict direction to literal types
-}
 
 type ReservationData = {
   reservation_id: string;

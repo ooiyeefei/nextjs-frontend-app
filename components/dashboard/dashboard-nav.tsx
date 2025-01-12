@@ -42,8 +42,8 @@ export function DashboardNav() {
       icon: Users,
     },
     {
-      name: "Booking Options",
-      href: "/dashboard/booking-options",
+      name: "Booking Settings",
+      href: "/dashboard/booking-settings",
       icon: Settings,
     },
     {

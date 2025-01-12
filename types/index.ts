@@ -189,3 +189,7 @@ export interface TableType {
     seats: number
   }
   
+export type SortConfig = {
+    key: string | null;  // Allow both string and null
+    direction: 'asc' | 'desc';  // Restrict direction to literal types
+  }

@@ -468,7 +468,8 @@ export async function updateReservation(reservationId: string, updateData: Parti
         customers: {
           name: data.customers.name,
           email: data.customers.email
-        }
+        },
+        customer_name: ""
       }
 
       await sendReservationEmail(
@@ -537,7 +538,8 @@ export async function cancelReservation(reservationId: string) {
       customers: {
         name: reservationData.customers.name,
         email: reservationData.customers.email
-      }
+      },
+      customer_name: ""
     }
 
     // Delete the reservation with both checks
@@ -753,6 +755,134 @@ export async function getBusinessLogoUrl() {
       stack: error?.stack,
       fullError: JSON.stringify(error, null, 2)
     })
+    throw error
+  }
+}
+
+// For booking rules
+export async function getReservationSettings() {
+  const supabase = createBrowserSupabaseClient()
+  try {
+    const { data: businessProfile } = await supabase
+      .from('business_profiles')
+      .select('id')
+      .single()
+
+    console.log('Business Profile:', businessProfile)
+
+    if (!businessProfile) return null
+
+    const { data, error } = await supabase
+      .from('reservation_settings')
+      .select('*')
+      .eq('business_id', businessProfile.id)
+      .order('id', { ascending: false })
+      .limit(1)
+      .single()
+
+    console.log('Fetched Settings:', data)
+    console.log('Fetch Error:', error)
+
+    if (error) {
+      if (error.code === 'PGRST116') return null // No settings found
+      throw error
+    }
+
+    return data
+  } catch (error: any) {
+    console.error('Error fetching reservation settings:', {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+      fullError: JSON.stringify(error, null, 2)
+    })
+    throw error
+  }
+}
+
+export async function updateReservationSettings(settings: {
+  timeslot_value: number;
+  timeslot_unit: string;
+  min_booking_value: number;
+  min_booking_unit: string;
+  max_booking_value: number;
+  max_booking_unit: string;
+  min_cancel_value: number;
+  min_cancel_unit: string;
+  max_cancel_value: number;
+  max_cancel_unit: string;
+}) {
+  const supabase = createBrowserSupabaseClient()
+  try {
+    const { data: businessProfile } = await supabase
+      .from('business_profiles')
+      .select('id')
+      .single()
+
+    if (!businessProfile) throw new Error('No business profile found')
+
+    // Get the latest settings record
+    const { data: existingSettings } = await supabase
+      .from('reservation_settings')
+      .select('*')
+      .eq('business_id', businessProfile.id)
+      .order('id', { ascending: false })
+      .limit(1)
+      .single()
+
+    const settingsData = {
+      business_id: businessProfile.id,
+      booking_timeslot: {
+        timeslot: {
+          value: settings.timeslot_value,
+          unit: settings.timeslot_unit
+        }
+      },
+      min_allowable_booking_time: {
+        value: settings.min_booking_value,
+        unit: settings.min_booking_unit
+      },
+      max_allowable_booking_time: {
+        value: settings.max_booking_value,
+        unit: settings.max_booking_unit
+      },
+      min_allowable_cancellation_time: {
+        value: settings.min_cancel_value,
+        unit: settings.min_cancel_unit
+      },
+      max_allowable_cancellation_time: {
+        value: settings.max_cancel_value,
+        unit: settings.max_cancel_unit
+      }
+    }
+
+    let result
+    if (existingSettings?.id) {
+      // Update existing record
+      const { data, error } = await supabase
+        .from('reservation_settings')
+        .update(settingsData)
+        .eq('id', existingSettings.id)
+        .select()
+        .single()
+
+      if (error) throw error
+      result = data
+    } else {
+      // Insert new record if none exists
+      const { data, error } = await supabase
+        .from('reservation_settings')
+        .insert(settingsData)
+        .select()
+        .single()
+
+      if (error) throw error
+      result = data
+    }
+
+    return result
+  } catch (error) {
+    console.error('Failed to update reservation settings:', error)
     throw error
   }
 }
