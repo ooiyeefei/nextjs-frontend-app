@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
 import { X } from 'lucide-react'
-import { createReservation } from "@/lib/supabase/queries"
+import { calculateReservationTimeslots, createReservation, updateReservation } from "@/lib/supabase/queries"
 import { toast } from "@/components/ui/toast"
 import { EditReservationModalProps, Status } from "@/types"
 import { format } from "date-fns"
@@ -36,14 +36,16 @@ const StatusBadge = ({ status }: { status: Status }) => (
   </Badge>
 )
 
-export function EditReservationModal({ isOpen, onClose,reservation, onSuccess, onReservationUpdated }: EditReservationModalProps) {
+export function EditReservationModal({ isOpen, onClose, reservation, onSuccess, onReservationUpdated }: EditReservationModalProps) {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [status, setStatus] = useState<Status>(reservation.status)
   const [showCalendar, setShowCalendar] = useState(false)
+  const [availableTimeslots, setAvailableTimeslots] = useState<Array<{start: string, end: string}>>([])
+  const [selectedTimeslot, setSelectedTimeslot] = useState<string | null>(null)
   const [formData, setFormData] = useState({
-    name: reservation.customer_name || reservation.customers?.name || '',
+    name: reservation.customer_name || '',
     email: reservation.customer_email,
-    phone: reservation.phone,
+    phone: reservation.customer_phone,
     party_size: reservation.party_size,
     special_requests: reservation.special_requests || '',
     dietary_restrictions: reservation.dietary_restrictions || ''
@@ -51,12 +53,37 @@ export function EditReservationModal({ isOpen, onClose,reservation, onSuccess, o
 
   // Update form data when reservation changes
   useEffect(() => {
-    setDate(new Date(reservation.reservation_time))
+    if (date) {
+      calculateReservationTimeslots(date.toISOString())
+        .then(slots => {
+          setAvailableTimeslots(slots)
+          // Set the current timeslot as selected
+          const currentSlot = slots.find(slot => 
+            slot.start === reservation.timeslot_start && 
+            slot.end === reservation.timeslot_end
+          )
+          if (currentSlot) {
+            setSelectedTimeslot(`${currentSlot.start}-${currentSlot.end}`)
+          }
+        })
+        .catch(error => {
+          console.error('Failed to fetch timeslots:', error)
+          toast({
+            title: "Error",
+            description: "Failed to load available timeslots",
+            variant: "destructive"
+          })
+        })
+    }
+  }, [date])
+
+  useEffect(() => {
+    setDate(new Date(reservation.date))
     setStatus(reservation.status)
     setFormData({
-      name: reservation.customer_name || reservation.customers?.name || '',
+      name: reservation.customer_name || '',
       email: reservation.customer_email,
-      phone: reservation.phone || '',
+      phone: reservation.customer_phone,
       party_size: reservation.party_size,
       special_requests: reservation.special_requests || '',
       dietary_restrictions: reservation.dietary_restrictions || ''
@@ -69,25 +96,14 @@ export function EditReservationModal({ isOpen, onClose,reservation, onSuccess, o
       const form = event.target as HTMLFormElement;
       const formData = new FormData(form);
 
-      // Check for required fields
-      const email = formData.get('email');
-      const name = formData.get('name');
-      const phone = formData.get('phone');
-      if (!email || !name || !phone) {
-        throw new Error('Required fields are missing');
+      if (!date || !selectedTimeslot) {
+        toast({
+          title: "Error",
+          description: "Please select both date and time slot",
+          variant: "destructive"
+        })
+        return
       }
-
-      // Log form data for debugging
-      console.log('Form Data:', {
-        email,
-        name,
-        phone,
-        special_requests: formData.get('special_requests'),
-        dietary_restrictions: formData.get('dietary_restrictions'),
-        partySize: formData.get('partySize'),
-        date: formData.get('date'),
-        time: formData.get('time')
-      });
 
       const partySize = parseInt(formData.get('partySize') as string, 10);
       if (partySize < 1) {
@@ -96,37 +112,31 @@ export function EditReservationModal({ isOpen, onClose,reservation, onSuccess, o
       }
 
       try {
-        const date = formData.get('date') as string;
-        const time = formData.get('time') as string;
-        const reservationTime = new Date(`${date}T${time}`).toISOString();
-
-        const reservationData = {
-          customer_email: email as string,
-          customer_name: name as string || null,
-          phone: formData.get('phone') as string || null,
-          reservation_time: reservationTime,
+        const [startTime, endTime] = selectedTimeslot.split('-')
+        
+        const updateData = {
+          customer_email: formData.get('email') as string,
+          customer_name: formData.get('name') as string,
+          customer_phone: formData.get('phone') as string,
+          date: format(date, 'yyyy-MM-dd'),
+          timeslot_start: startTime,
+          timeslot_end: endTime,
+          party_size: parseInt(formData.get('partySize') as string),
           status: status,
-          special_requests: formData.get('special_requests') as string || null,
-          dietary_restrictions: formData.get('dietary_restrictions') as string || null,
-          party_size: partySize
-        };
-
-        console.log('Processed reservation data:', reservationData);
-        const result = await createReservation(reservationData);
-        console.log('Reservation creation result:', result);
-
+          special_requests: formData.get('special_requests') as string,
+          dietary_restrictions: formData.get('dietary_restrictions') as string
+        }
+  
+        await updateReservation(reservation.id, updateData)
+        
         toast({
           title: "Success",
-          description: "Reservation created successfully",
+          description: "Reservation updated successfully",
           variant: "success"
-        });
+        })
 
-        if (onSuccess) {
-          await onSuccess();
-        }
-
-        window.location.reload();
-        onClose();
+        if (onReservationUpdated) await onReservationUpdated()
+          onClose()
       } catch (error: any) {
         console.error('Reservation creation failed:', {
           error: {
@@ -208,46 +218,46 @@ export function EditReservationModal({ isOpen, onClose,reservation, onSuccess, o
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Date</Label>
               <div className="col-span-3">
-                {date ? (
-                  <div className="mb-2">
-                    <Input 
-                      readOnly
-                      value={format(date, 'dd MMM yyyy (EEEE)')}
-                      className="cursor-pointer"
-                      onClick={() => setShowCalendar(true)}
-                    />
-                  </div>
-                ) : null}
+                <Input 
+                  readOnly
+                  value={date ? format(date, 'dd MMM yyyy (EEEE)') : ''}
+                  className="cursor-pointer"
+                  onClick={() => setShowCalendar(true)}
+                />
                 {showCalendar && (
                   <Calendar
                     mode="single"
                     selected={date}
-                    onSelect={(selectedDate) => {
-                      setDate(selectedDate);
-                      setShowCalendar(false);
+                    onSelect={(newDate) => {
+                      setDate(newDate)
+                      setShowCalendar(false)
                     }}
-                    className="rounded-md border"
+                    className="mt-2 border rounded-md"
                   />
                 )}
               </div>
             </div>
 
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="time" className="text-right">Time</Label>
-              <Input
-                id="time"
-                name="time"
-                type="time"
-                value={format(new Date(reservation.reservation_time), 'HH:mm')}
-                onChange={(e) => {
-                  const newDate = new Date(date!);
-                  const [hours, minutes] = e.target.value.split(':');
-                  newDate.setHours(parseInt(hours), parseInt(minutes));
-                  setDate(newDate);
-                }}
-                className="col-span-3 bg-white text-black border border-gray-300 rounded-md dark:bg-slate-800 dark:text-white dark:border-gray-600 [&::-webkit-calendar-picker-indicator]:dark:invert-[1]"
-                required
-              />
+              <Label htmlFor="time" className="text-right">Time Slot</Label>
+              <Select 
+                value={selectedTimeslot || ''} 
+                onValueChange={setSelectedTimeslot}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a time slot" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTimeslots.map((slot, index) => (
+                    <SelectItem 
+                      key={index} 
+                      value={`${slot.start}-${slot.end}`}
+                    >
+                      {`${slot.start} - ${slot.end}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-4 items-center gap-4">

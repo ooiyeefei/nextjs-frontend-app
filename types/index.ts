@@ -1,9 +1,11 @@
 // Base Types and Enums
-export type Status = 'arriving-soon' | 'late' | 'no-show' | 'confirmed' | 'seated' | 'completed';
+export type Status = 'arriving-soon' | 'late' | 'no-show' | 'confirmed' | 'seated' | 'completed' | 'new' | 'cancelled';
 
 export const statusColors = {
+  new: 'bg-status-blue',
   'arriving-soon': 'bg-status-yellow',
   late: 'bg-status-red',
+  cancelled: 'bg-status-gray',
   'no-show': 'bg-status-gray',
   confirmed: 'bg-status-blue',
   seated: 'bg-status-green',
@@ -11,45 +13,69 @@ export const statusColors = {
 };
 
 // Data Models
-export interface Customer {
-    id: string
-    name: string
-    email: string
-    phone: string
-    total_visits: number
-    joined_date: string
-    business_id?: string
-  reservation_id?: string | null  
+export interface User {
+  id: string
+  email: string
+  name: string[]
+  phone: string[]
+  joined_date: string
+  is_business_user: boolean
+  business_id?: string | null
+  total_visits?: number
+  is_registered: boolean
 }
+
 export interface Reservation {
-    customer_name: string
-    reservation_id: string
-    reservation_time: string
-    customer_email: string
-    phone: string
-    status: Status
-    special_requests: string | null
-    dietary_restrictions: string | null
-    party_size: number
-    customers: {
-      name: string
-      email: string
-    } | null
+  id: string
+  confirmation_code?: string
+  date: string
+  timeslot_start: string
+  timeslot_end: string
+  party_size: number
+  status: Status
+  created_at?: string
+  updated_at?: string
+  customer_id: string
+  customer_name: string
+  customer_email: string
+  customer_phone: string
+  deposit_amount?: number
+  is_deposit_made?: boolean
+  dietary_restrictions?: string
+  business_id: string
+  special_occasions?: string
+  special_requests?: string
 }
 
 export interface BusinessProfile {
-    id?: string;
-    'restaurant_name': string;
-    phone?: string | null;
-    address?: string | null;
-    website?: string | null;
-    'operating_hours'?: Record<string, any> | null;
-    'capacity_info'?: Record<string, any> | null;
-    user_id: string;
-    cancellation_policy?: string | null;
-    refund_policy?: string | null;
-    data_usage_disclaimer?: string | null;
-  }
+  id?: string
+  slug: string
+  name: string
+  cuisine?: string
+  address: string
+  google_place_id?: string
+  google_latitude?: number
+  google_longitude?: number
+  google_maps_url?: string
+  images?: string[]
+  cancellation_policy?: string
+  refund_policy?: string
+  general_policy?: string
+  data_usage_policy?: string
+  min_allowed_booking_advance_hours: number
+  max_allowed_booking_advance_hours: number
+  allowed_cancellation_hours: number
+  created_at?: string
+  updated_at?: string
+  is_active: boolean
+  is_deposit_required: boolean
+  operating_hours: Record<string, any>
+  description?: string
+  timezone: string
+  owner_user_id: string
+  phone?: string | null
+  website?: string | null
+}
 
 export interface Product {
   id: string
@@ -96,12 +122,19 @@ export interface CapacitySettings {
 }
 
 export interface ReservationSetting {
-  business_id: string
   day_of_week: number
-  start_time: string
-  end_time: string
-  specific_date: string | null
-  capacity_settings: CapacitySettings
+  timeslot_length_minutes: number
+  reservation_start_time: string
+  reservation_end_time: string
+  capacity_settings: { default: number }
+  is_default: boolean
+}
+
+export interface BookingSettings {
+  min_allowed_booking_advance_hours: number;
+  max_allowed_booking_advance_hours: number;
+  allowed_cancellation_hours: number;
+  settings: ReservationSetting[];
 }
 
 
@@ -153,9 +186,12 @@ export interface TableAvailability {
   }
   
   export interface TimeSlot {
-    start: string
-    end: string
-    tables: TableAvailability[]
+    reservation_start_time: string;
+    reservation_end_time: string;
+    tables: Array<{
+      tableTypeId: string;
+      quantity: number;
+    }>;
   }
   
   export interface DaySchedule {
@@ -173,15 +209,18 @@ export interface TableAvailability {
   }
   
   export interface CreateReservationData {
+    customer_name: string
     customer_email: string
-    customer_name: string | null
-    phone?: string | null
-    reservation_time: string
-    status: string
+    customer_phone: string
+    date: string
+    timeslot_start: string
+    timeslot_end: string
+    party_size: number
+    status: Status
     special_requests?: string | null
     dietary_restrictions?: string | null
-    party_size: number
   }
+  
   
 export interface TableType {
     id: string

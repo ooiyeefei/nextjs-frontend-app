@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,18 +9,38 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
 import { X } from 'lucide-react'
-import { createReservation } from "@/lib/supabase/queries"
+import { calculateReservationTimeslots, createReservation } from "@/lib/supabase/queries"
 import { toast } from "@/components/ui/toast"
-import { CreateReservationModalProps, Status } from "@/types"
+import { CreateReservationData, CreateReservationModalProps, Status } from "@/types"
 import { format } from "date-fns"
 
 export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateReservationModalProps) {
   const [date, setDate] = useState<Date | undefined>(new Date())
-  const [status, setStatus] = useState<Status>('confirmed')
+  const [status, setStatus] = useState<Status>('new')
 
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
   const [showCalendar, setShowCalendar] = useState(false)
 
+  const [availableTimeslots, setAvailableTimeslots] = useState<Array<{start: string, end: string}>>([])
+  const [selectedTimeslot, setSelectedTimeslot] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (date) {
+      calculateReservationTimeslots(date.toISOString())
+        .then(slots => {
+          setAvailableTimeslots(slots)
+          setSelectedTimeslot(null)
+        })
+        .catch(error => {
+          console.error('Failed to fetch timeslots:', error)
+          toast({
+            title: "Error",
+            description: "Failed to load available timeslots",
+            variant: "destructive"
+          })
+        })
+    }
+  }, [date])
 
   const handleSubmit = async (event: React.FormEvent) => {
       event.preventDefault();
@@ -28,25 +48,14 @@ export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateRes
       const form = event.target as HTMLFormElement;
       const formData = new FormData(form);
 
-      // Check for required fields
-      const email = formData.get('email');
-      const name = formData.get('name');
-      const phone = formData.get('phone');
-      if (!email || !name || !phone) {
-        throw new Error('Required fields are missing');
+      if (!date || !selectedTimeslot) {
+        toast({
+          title: "Error",
+          description: "Please select both date and time slot",
+          variant: "destructive"
+        })
+        return
       }
-
-      // Log form data for debugging
-      console.log('Form Data:', {
-        email,
-        name,
-        phone,
-        special_requests: formData.get('special_requests'),
-        dietary_restrictions: formData.get('dietary_restrictions'),
-        partySize: formData.get('partySize'),
-        date: formData.get('date'),
-        time: formData.get('time')
-      });
 
       const partySize = parseInt(formData.get('partySize') as string, 10);
       if (partySize < 1) {
@@ -55,19 +64,17 @@ export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateRes
       }
 
       try {
-        const date = formData.get('date') as string;
-        const time = formData.get('time') as string;
-        const reservationTime = new Date(`${date}T${time}`).toISOString();
-
-        const reservationData = {
-          customer_email: email as string,
-          customer_name: name as string || null,
-          phone: formData.get('phone') as string || null,
-          reservation_time: reservationTime,
+        const reservationData: CreateReservationData = {
+          customer_email: formData.get('email') as string,
+          customer_name: formData.get('name') as string,
+          customer_phone: formData.get('phone') as string,
+          date: format(date, 'yyyy-MM-dd'),
+          timeslot_start: formData.get('timeslot_start') as string,
+          timeslot_end: formData.get('timeslot_end') as string,
+          party_size: parseInt(formData.get('partySize') as string),
           status: status,
           special_requests: formData.get('special_requests') as string || null,
-          dietary_restrictions: formData.get('dietary_restrictions') as string || null,
-          party_size: partySize
+          dietary_restrictions: formData.get('dietary_restrictions') as string || null
         };
 
         console.log('Processed reservation data:', reservationData);

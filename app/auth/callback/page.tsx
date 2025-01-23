@@ -1,42 +1,9 @@
-// 'use client';
-
-// import { useEffect } from 'react';
-// import { useRouter } from 'next/navigation';
-// import { createBrowserSupabaseClient } from '@/lib/supabase/client'
-
-// export default function AuthCallback() {
-//   const router = useRouter();
-//   const supabase = createBrowserSupabaseClient();
-
-//   useEffect(() => {
-//     const handleAuthCallback = async () => {
-//       try {
-//         const { searchParams } = new URL(window.location.href);
-//         const code = searchParams.get('code');
-
-//         if (code) {
-//           await supabase.auth.exchangeCodeForSession(code);
-//           router.push('/dashboard');
-//         } else {
-//           throw new Error('No code found');
-//         }
-//       } catch (error) {
-//         console.error('Error:', error);
-//         router.push('/login');
-//       }
-//     };
-
-//     handleAuthCallback();
-//   }, [router, supabase.auth]);
-
-//   return <div>Loading...</div>;
-// }
-
 'use client';
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
+import { createInitialBusinessProfile, getBusinessProfile } from '@/lib/supabase/queries';
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -54,6 +21,29 @@ export default function AuthCallback() {
           console.error('Error retrieving session:', error);
           router.push('/login');
           return;
+        }
+
+        // Add debug logging
+        console.log('Session data:', {
+          user: data.session.user,
+          emailConfirmed: data.session.user?.email_confirmed_at,
+          timestamp: new Date().toISOString()
+        })
+
+        // Check if email is confirmed and business profile exists
+        if (data.session.user?.email_confirmed_at) {
+          try {
+            const existingProfile = await getBusinessProfile();
+            
+            if (!existingProfile) {
+              console.log('No business profile found, creating initial profile...');
+              await createInitialBusinessProfile();
+              console.log('Initial business profile created successfully');
+            }
+          } catch (error) {
+            console.error('Error handling business profile:', error);
+            // Continue with navigation even if profile creation fails
+          }
         }
 
         console.log('Session successfully established:', data.session);

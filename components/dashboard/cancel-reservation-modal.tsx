@@ -19,7 +19,7 @@ export function CancelReservationModal({ isOpen, onClose, reservation }: CancelR
 
     try {
       await Promise.all([
-        cancelReservation(reservation.reservation_id),
+        cancelReservation(reservation.id),
         // Add a small delay to ensure toast is visible
         new Promise(resolve => setTimeout(resolve, 1000))
       ])
@@ -59,8 +59,8 @@ export function CancelReservationModal({ isOpen, onClose, reservation }: CancelR
           </p>
           {reservation && (
             <div className="mt-4 space-y-2">
-              <p><strong>Customer:</strong> {reservation.customers?.name}</p>
-              <p><strong>Time:</strong> {new Date(reservation.reservation_time).toLocaleString()}</p>
+              <p><strong>Customer:</strong> {reservation.customer_name}</p>
+              <p><strong>Time:</strong> {new Date(reservation.timeslot_start).toLocaleString()}</p>
             </div>
           )}
         </div>

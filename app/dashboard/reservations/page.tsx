@@ -34,22 +34,6 @@ const StatusBadge = ({ status }: { status: Status }) => (
   </Badge>
 )
 
-type ReservationData = {
-  reservation_id: string;
-  customer_name: string;
-  customer_email: string;
-  phone: string;
-  reservation_time: string;
-  party_size: number;
-  status: Status;
-  special_requests: string | null;
-  dietary_restrictions: string | null;
-  customers: {
-    name: string;
-    email: string;
-  } | null;
-}
-
 export default function ReservationsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [cancelModalOpen, setCancelModalOpen] = useState(false)
@@ -94,13 +78,13 @@ export default function ReservationsPage() {
     </div>
   )
 
-  const sortData = (data: ReservationData[], sortConfig: SortConfig) => {
+  const sortData = (data: Reservation[], sortConfig: SortConfig) => {
       if (!sortConfig.key) return data;
     
       return [...data].sort((a, b) => {
-        if (sortConfig.key === 'reservation_time') {
-          const dateA = new Date(a[sortConfig.key]).getTime();
-          const dateB = new Date(b[sortConfig.key]).getTime();
+        if (sortConfig.key === 'date') {
+          const dateA = new Date(a.date).getTime();
+          const dateB = new Date(b.date).getTime();
           return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
         }
     
@@ -158,7 +142,11 @@ export default function ReservationsPage() {
   
       // Process each reservation and prepare updates if needed
       const processedReservations = reservations.map(res => {
-        const reservationTime = new Date(res.reservation_time)
+        const reservationDate = new Date(res.date);
+        const [hours, minutes] = res.timeslot_start.split(':');
+        const reservationTime = new Date(reservationDate);
+        reservationTime.setHours(parseInt(hours), parseInt(minutes));
+        
         // Add 15 minutes grace period
         const graceTime = new Date(reservationTime.getTime() + 15 * 60000)
         
@@ -181,7 +169,7 @@ export default function ReservationsPage() {
             }
   
             // Queue the update
-            updates.push(updateReservationStatus(res.reservation_id, newStatus))
+            updates.push(updateReservationStatus(res.id, newStatus))
             // Return reservation with new status
             return { ...res, status: newStatus }
           }
@@ -195,18 +183,23 @@ export default function ReservationsPage() {
       }
   
       // Filter processed reservations into active and past
-      const active = processedReservations.filter(res => 
-        new Date(res.reservation_time) > now && 
-        !['completed', 'no-show'].includes(res.status)
-      )
-  
-      const past = processedReservations.filter(res => 
-        new Date(res.reservation_time) <= now || 
-        ['completed', 'no-show'].includes(res.status)
-      )
-  
-      setActiveReservations(active)
-      setPastReservations(past)
+      const active = processedReservations.filter(res => {
+        const reservationDate = new Date(res.date);
+        const [hours, minutes] = res.timeslot_start.split(':');
+        reservationDate.setHours(parseInt(hours), parseInt(minutes));
+        return reservationDate > now && !['completed', 'no-show'].includes(res.status);
+      });
+      
+      const past = processedReservations.filter(res => {
+        const reservationDate = new Date(res.date);
+        const [hours, minutes] = res.timeslot_start.split(':');
+        reservationDate.setHours(parseInt(hours), parseInt(minutes));
+        return reservationDate <= now || ['completed', 'no-show'].includes(res.status);
+      });
+
+      setActiveReservations(active as Reservation[]);
+      setPastReservations(past as Reservation[]);
+
     } catch (error) {
       console.error("Error fetching reservations:", error)
     } finally {
@@ -249,7 +242,7 @@ export default function ReservationsPage() {
            { key: 'customer_name', label: 'Customer Name' },
            { key: 'customer_email', label: 'Email' },
            { key: 'phone', label: 'Phone' },
-           { key: 'reservation_time', label: 'Date & Time' },
+           { key: 'date', label: 'Date & Time' },
            { key: 'party_size', label: 'Party Size' },
            { key: 'status', label: 'Status' },
            { key: 'special_requests', label: 'Special Requests' },
@@ -273,15 +266,17 @@ export default function ReservationsPage() {
               </TableHeader>
               <TableBody>
          {sortData(activeReservations, activeSortConfig).map((reservation) => (
-           <TableRow key={reservation.reservation_id}>
-             <TableCell>{reservation.customer_name ?? reservation.customers?.name ?? '-'}</TableCell>
+           <TableRow key={reservation.id}>
+             <TableCell>{reservation.customer_name ?? reservation.customer_name ?? '-'}</TableCell>
              <TableCell>{reservation.customer_email}</TableCell>
-             <TableCell>{reservation.phone}</TableCell>
-             <TableCell>{format(new Date(reservation.reservation_time), 'PPp')}</TableCell>
+             <TableCell>{reservation.customer_phone}</TableCell>
+             <TableCell>
+              {`${format(new Date(reservation.date), 'PPP')} ${reservation.timeslot_start} - ${reservation.timeslot_end}`}
+            </TableCell>
              <TableCell>{reservation.party_size}</TableCell>
              <TableCell>
               <StatusCell 
-                  reservationId={reservation.reservation_id} 
+                  reservationId={reservation.id} 
                   status={reservation.status} 
                 />
              </TableCell>
@@ -346,15 +341,17 @@ export default function ReservationsPage() {
               </TableHeader>
               <TableBody>
                 {sortData(pastReservations, pastSortConfig).map((reservation) => (
-                  <TableRow key={reservation.reservation_id}>
-                    <TableCell>{reservation.customer_name ?? reservation.customers?.name ?? '-'}</TableCell>
+                  <TableRow key={reservation.id}>
+                    <TableCell>{reservation.customer_name ?? reservation.customer_name ?? '-'}</TableCell>
                     <TableCell>{reservation.customer_email}</TableCell>
-                    <TableCell>{reservation.phone}</TableCell>
-                    <TableCell>{format(new Date(reservation.reservation_time), 'PPp')}</TableCell>
+                    <TableCell>{reservation.customer_phone}</TableCell>
+                    <TableCell>
+                      {`${format(new Date(reservation.date), 'PPP')} ${reservation.timeslot_start} - ${reservation.timeslot_end}`}
+                    </TableCell>
                     <TableCell>{reservation.party_size}</TableCell>
                     <TableCell>
                       <StatusCell 
-                        reservationId={reservation.reservation_id} 
+                        reservationId={reservation.id} 
                         status={reservation.status} 
                       />
                     </TableCell>

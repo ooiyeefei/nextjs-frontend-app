@@ -183,7 +183,7 @@ export default function ProfilePage() {
         website: formData.website,
         address: formData.address,
         'operating_hours': schedule,
-        'capacity_info': null,
+        'capacity_settings': null,
         cancellation_policy: formData.cancellationPolicy,
         refund_policy: formData.refundPolicy,
         data_usage_disclaimer: formData.dataUsageDisclaimer
@@ -264,12 +264,11 @@ export default function ProfilePage() {
       const existingProfile = await getBusinessProfile()
 
       await upsertBusinessProfile({
-        'restaurant_name': existingProfile['restaurant_name'],  // Required field
-        'operating_hours': schedule,
+        name: existingProfile['restaurant_name'],
+        operating_hours: schedule,
         phone: existingProfile.phone,
         website: existingProfile.website,
         address: existingProfile.address,
-        'capacity_info': existingProfile['capacity_info']
       })
       toast({
         title: "Success",

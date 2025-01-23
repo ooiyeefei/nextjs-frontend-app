@@ -10,14 +10,14 @@ import { useRouter } from "next/navigation"
 import { CreateCustomerModal } from "@/components/dashboard/create-customer-modal"
 import { EditCustomerModal } from "@/components/dashboard/edit-customer-modal"
 import { DeleteCustomerModal } from "@/components/dashboard/delete-customer-modal"
-import { Customer } from "@/types"
+import { User } from "@/types"
 
 export default function CustomersPage() {
   const router = useRouter()
-  const [customers, setCustomers] = useState<Customer[]>([])
+  const [customers, setCustomers] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [selectedCustomer, setSelectedCustomer] = useState<User | null>(null)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
@@ -75,12 +75,12 @@ export default function CustomersPage() {
 
   if (isLoading) return <div>Loading...</div>
 
-  const handleEditCustomer = (customer: Customer) => {
+  const handleEditCustomer = (customer: User) => {
     setSelectedCustomer(customer)
     setEditModalOpen(true)
   }
 
-  const handleDeleteCustomer = (customer: Customer) => {
+  const handleDeleteCustomer = (customer: User) => {
     setSelectedCustomer(customer)
     setDeleteModalOpen(true)
   }
