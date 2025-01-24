@@ -1,12 +1,18 @@
-import { BusinessProfile, CreateProductData, CreateReservationData, User, DateSchedule, Product, Reservation, TableType, UpdateProductData, WeeklyScheduleState, BookingSettings } from "types"
+import { BusinessProfile, CreateProductData, CreateReservationData, User, DateSchedule, Product, Reservation, TableType, UpdateProductData, WeeklyScheduleState, BookingSettings, ReservationForTimeSlotGen } from "types"
 import { createBrowserSupabaseClient } from './client'
-import { format } from 'date-fns';
+import { endOfDay, format, startOfDay } from 'date-fns';
 import { sendReservationEmail } from "../aws/email-service";
 import { toast } from "@/components/ui/toast";
+import { convertToUtc } from "../utils/date-and-time";
+
+interface GetReservationsResponse {
+  reservations: ReservationForTimeSlotGen[];
+  error?: string;
+}
 
 export async function createInitialBusinessProfile() {
   const supabase = createBrowserSupabaseClient()
-  
+
   try {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('No authenticated user')
@@ -21,6 +27,7 @@ export async function createInitialBusinessProfile() {
         phone: [''],
         joined_date: new Date().toISOString(),
         is_business_user: true,
+        is_external_cx: false,
         is_registered: true
       }, {
         onConflict: 'id'
@@ -98,7 +105,7 @@ export async function createInitialBusinessProfile() {
 
 export async function getReservations() {
   const supabase = createBrowserSupabaseClient()
-  
+
   try {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -108,6 +115,8 @@ export async function getReservations() {
       .select('id')
       .eq('owner_user_id', user?.id)
       .maybeSingle()
+
+    console.log('business profile found:', businessProfile);
 
     if (profileError) throw profileError
     if (!businessProfile) throw new Error('No business profile found')
@@ -130,7 +139,8 @@ export async function getReservations() {
         is_deposit_made,
         dietary_restrictions,
         special_occasions,
-        special_requests
+        special_requests,
+        business_id
       `)
       .eq('business_id', businessProfile.id)  // Add business_id filter
       .order('date', { ascending: false })
@@ -162,7 +172,8 @@ export async function getReservations() {
       is_deposit_made: reservation.is_deposit_made,
       dietary_restrictions: reservation.dietary_restrictions,
       special_occasions: reservation.special_occasions,
-      special_requests: reservation.special_requests
+      special_requests: reservation.special_requests,
+      business_id: reservation.business_id
     }))
 
     return formattedData || []
@@ -178,10 +189,43 @@ export async function getReservations() {
   }
 }
 
+export async function getReservationsByBusinessId(
+  businessId: string, startDate: Date, endDate: Date, restaurantTimezone: string
+): Promise<GetReservationsResponse> {
+  const supabase = createBrowserSupabaseClient()
+
+  try {
+    const utcStartDate = convertToUtc(startOfDay(startDate), restaurantTimezone);
+    const utcEndDate = convertToUtc(endOfDay(endDate), restaurantTimezone);
+    console.log('startDate: ', startDate);
+    console.log('startOfDay(startDate): ', startOfDay(startDate));
+    console.log('utcStartDate: ', utcStartDate);
+    console.log('endDate: ', endDate);
+    console.log('utcEndDate: ', utcEndDate);
+
+    const { data: reservations, error } = await supabase
+      .from('reservations')
+      .select('date, timeslot_start, timeslot_end, party_size')
+      .eq('business_id', businessId)
+      .gte('date', startOfDay(utcStartDate).toISOString())
+      .lte('date', endOfDay(utcEndDate).toISOString())
+      .in('status', ['new', 'cancelled', 'completed'])
+      .order('timeslot_start', { ascending: true });
+
+    if (error) throw error;
+
+    console.log('supabase reservations: ', reservations);
+
+    return { reservations: reservations as ReservationForTimeSlotGen[] };
+  } catch (error) {
+    console.error('Error fetching reservations:', error);
+    return { reservations: [], error: 'Failed to fetch reservations' };
+  }
+}
 
 export async function getCustomers() {
   const supabase = createBrowserSupabaseClient()
-  
+
   try {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError) throw authError
@@ -202,46 +246,46 @@ export async function getCustomers() {
       .select(`*`)
       .eq('business_id', businessProfile.id)
       .eq('is_business_user', false)
-      
-      if (error) throw error
-      // Map the data to match User interface
-      const formattedData = customers?.map(customer => ({
-        id: customer.id,
-        name: customer.name,
-        email: customer.email,
-        phone: customer.phone,
-        total_visits: customer.total_visits,
-        joined_date: customer.joined_date,
-        is_business_user: false,
-        is_registered: customer.is_registered
-      })) || []
-  
-      return formattedData
-    } catch (error) {
-      console.error('Failed to fetch customers:', error)
-      throw error
-    }
-  }
 
-  export async function getCustomerById(id: string) {
-    const supabase = createBrowserSupabaseClient()
-    
-    try {
-      console.log('Getting customer by ID:', { 
-        id,
-        timestamp: new Date().toISOString() 
-      })
-      // Get business profile first
-      const { data: businessProfile } = await supabase
-        .from('business_profiles')
-        .select('id')
-        .single()
-  
-      if (!businessProfile) throw new Error('No business profile found')
-  
-      const { data: customer, error: customerError } = await supabase
-        .from('users')
-        .select(`
+    if (error) throw error
+    // Map the data to match User interface
+    const formattedData = customers?.map(customer => ({
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      total_visits: customer.total_visits,
+      joined_date: customer.joined_date,
+      is_business_user: false,
+      is_registered: customer.is_registered
+    })) || []
+
+    return formattedData
+  } catch (error) {
+    console.error('Failed to fetch customers:', error)
+    throw error
+  }
+}
+
+export async function getCustomerById(id: string) {
+  const supabase = createBrowserSupabaseClient()
+
+  try {
+    console.log('Getting customer by ID:', {
+      id,
+      timestamp: new Date().toISOString()
+    })
+    // Get business profile first
+    const { data: businessProfile } = await supabase
+      .from('business_profiles')
+      .select('id')
+      .single()
+
+    if (!businessProfile) throw new Error('No business profile found')
+
+    const { data: customer, error: customerError } = await supabase
+      .from('users')
+      .select(`
           id,
           name,
           email,
@@ -249,9 +293,9 @@ export async function getCustomers() {
           total_visits,
           joined_date
         `)
-        .eq('id', id)
-        .eq('business_id', businessProfile.id)
-        .single()
+      .eq('id', id)
+      .eq('business_id', businessProfile.id)
+      .single()
 
     if (customerError) throw customerError
 
@@ -277,7 +321,7 @@ export async function getCustomers() {
 
 export async function updateReservationStatus(id: string, status: string) {
   const supabase = createBrowserSupabaseClient()
-  
+
   try {
     // Get the business profile first
     const { data: businessProfile } = await supabase
@@ -286,7 +330,7 @@ export async function updateReservationStatus(id: string, status: string) {
       .single()
 
     if (!businessProfile) throw new Error('No business profile found')
-    
+
     console.log('🔍 Attempting status update:', {
       id,
       status,
@@ -309,177 +353,177 @@ export async function updateReservationStatus(id: string, status: string) {
     })
 
     if (error) throw new Error(`Failed to update status: ${error.message}`)
-      if (!data?.length) throw new Error(`No reservation found with ID: ${id}`)
-      
-      return data[0]
-    } catch (error) {
-      console.error('🚫 Update error:', error)
-      throw error
-    }
+    if (!data?.length) throw new Error(`No reservation found with ID: ${id}`)
+
+    return data[0]
+  } catch (error) {
+    console.error('🚫 Update error:', error)
+    throw error
   }
+}
 
-  export async function createCustomer(customerData: {
-        name: string;
-        email: string;
-        phone: string;
-    }) {
-        const supabase = createBrowserSupabaseClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
+export async function createCustomer(customerData: {
+  name: string;
+  email: string;
+  phone: string;
+}) {
+  const supabase = createBrowserSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-        if (!user) throw new Error('No authenticated user')
-        
-        try {
-            // Check if the authenticated user has an associated business profile
-            const { data: businessProfile, error: businessProfileError } = await supabase
-                .from('business_profiles')
-                .select('id')
-                .eq('user_id', user.id) // Ensure you are checking the correct user
-                .single();
+  if (!user) throw new Error('No authenticated user')
 
-            if (businessProfileError || !businessProfile) {
-                throw new Error('No business profile found for the authenticated user');
-            }
-            console.log('Inserting customer with data:', customerData);
-            // Insert the customer without specifying business_id
-            const { data, error } = await supabase
-                .from('users')
-                .insert([{
-                    ...customerData,
-                    total_visits: 0,
-                    joined_date: new Date().toISOString()
-                    // Do not include business_id here; it will be set by the trigger
-                }])
-                .select();
+  try {
+    // Check if the authenticated user has an associated business profile
+    const { data: businessProfile, error: businessProfileError } = await supabase
+      .from('business_profiles')
+      .select('id')
+      .eq('user_id', user.id) // Ensure you are checking the correct user
+      .single();
 
-            if (error) throw error;
-            return data[0];
-        } catch (error) {
-            console.error('Failed to create customer:', error);
-            throw error;
-        }
+    if (businessProfileError || !businessProfile) {
+      throw new Error('No business profile found for the authenticated user');
+    }
+    console.log('Inserting customer with data:', customerData);
+    // Insert the customer without specifying business_id
+    const { data, error } = await supabase
+      .from('users')
+      .insert([{
+        ...customerData,
+        total_visits: 0,
+        joined_date: new Date().toISOString()
+        // Do not include business_id here; it will be set by the trigger
+      }])
+      .select();
+
+    if (error) throw error;
+    return data[0];
+  } catch (error) {
+    console.error('Failed to create customer:', error);
+    throw error;
+  }
+}
+
+export async function updateCustomer(customerId: string, updateData: Partial<User> & { existing_email?: string }) {
+  const supabase = createBrowserSupabaseClient()
+  console.log('Updating customer:', {
+    originalEmail: updateData.existing_email,
+    newEmail: updateData.email
+  })
+
+  try {
+    const { data: businessProfile } = await supabase
+      .from('business_profiles')
+      .select('id')
+      .single()
+
+    if (!businessProfile) throw new Error('No business profile found')
+
+    // First update customer using the customer ID
+    const { data: updatedCustomer, error: updateError } = await supabase
+      .from('users')
+      .update({
+        email: updateData.email,
+        name: updateData.name,
+        phone: updateData.phone,
+      })
+      .eq('id', customerId)
+      .eq('business_id', businessProfile.id)
+      .select()
+      .single()
+
+    if (updateError) throw updateError
+
+    // then update reservations using the existing email
+    if (updateData.email && updateData.email !== updateData.existing_email) {
+      const { error: reservationError } = await supabase
+        .from('reservations')
+        .update({ customer_email: updateData.email })
+        .eq('customer_email', updateData.existing_email)
+        .eq('business_id', businessProfile.id)
+
+      if (reservationError) {
+        console.error('Reservation update error:', reservationError)
+        throw reservationError
+      }
     }
 
-    export async function updateCustomer(customerId: string, updateData: Partial<User> & { existing_email?: string }) {
-      const supabase = createBrowserSupabaseClient()
-      console.log('Updating customer:', {
-        originalEmail: updateData.existing_email,
-        newEmail: updateData.email
+
+
+    if (updateError) throw updateError
+
+    return updatedCustomer
+
+  } catch (error: any) {
+    console.error('Failed to update customer:', {
+      error,
+      details: {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack,
+        status: error?.status,
+        statusCode: error?.statusCode
+      }
+    })
+    throw error
+  }
+}
+
+
+
+export async function deleteCustomer(customerId: string) {
+  const supabase = createBrowserSupabaseClient()
+  try {
+    const { data: businessProfile } = await supabase
+      .from('business_profiles')
+      .select('id')
+      .single()
+
+    if (!businessProfile) throw new Error('No business profile found')
+
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .match({
+        id: customerId,
+        business_id: businessProfile.id
       })
 
-      try {
-        const { data: businessProfile } = await supabase
-          .from('business_profiles')
-          .select('id')
-          .single()
-    
-        if (!businessProfile) throw new Error('No business profile found')
-    
-        // First update customer using the customer ID
-        const { data: updatedCustomer, error: updateError } = await supabase
-          .from('users')
-          .update({
-            email: updateData.email,
-            name: updateData.name,
-            phone: updateData.phone,
-          })
-          .eq('id', customerId)
-          .eq('business_id', businessProfile.id)
-          .select()
-          .single()
-        
-        if (updateError) throw updateError
-        
-        // then update reservations using the existing email
-        if (updateData.email && updateData.email !== updateData.existing_email) {
-          const { error: reservationError } = await supabase
-            .from('reservations')
-            .update({ customer_email: updateData.email })
-            .eq('customer_email', updateData.existing_email)
-            .eq('business_id', businessProfile.id)
+    if (error) throw error
+    return true
+  } catch (error: any) {
+    console.error('Failed to delete customer:', {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+      status: error?.status,
+      statusCode: error?.statusCode,
+      fullError: JSON.stringify(error, null, 2)
+    })
+    throw error
+  }
+}
 
-          if (reservationError) {
-            console.error('Reservation update error:', reservationError)
-            throw reservationError
-          }
-        }
+export async function createReservation(reservationData: CreateReservationData) {
+  const supabase = createBrowserSupabaseClient()
 
-        
+  try {
+    const { data: businessProfile } = await supabase
+      .from('business_profiles')
+      .select('*')
+      .single()
 
-        if (updateError) throw updateError
-
-        return updatedCustomer
-
-      } catch (error: any) {
-        console.error('Failed to update customer:', {
-          error,
-          details: {
-            name: error?.name,
-            message: error?.message,
-            stack: error?.stack,
-            status: error?.status,
-            statusCode: error?.statusCode
-          }
-        })
-        throw error
-      }
+    if (!businessProfile) {
+      throw new Error('No business profile found')
     }
-     
-    
-    
-    export async function deleteCustomer(customerId: string) {
-      const supabase = createBrowserSupabaseClient()
-      try {
-        const { data: businessProfile } = await supabase
-          .from('business_profiles')
-          .select('id')
-          .single()
-    
-        if (!businessProfile) throw new Error('No business profile found')
-    
-        const { error } = await supabase
-          .from('users')
-          .delete()
-          .match({
-            id: customerId,
-            business_id: businessProfile.id
-          })
-    
-        if (error) throw error
-        return true
-      } catch (error: any) {
-        console.error('Failed to delete customer:', {
-          name: error?.name,
-          message: error?.message,
-          stack: error?.stack,
-          status: error?.status,
-          statusCode: error?.statusCode,
-          fullError: JSON.stringify(error, null, 2)
-        })
-        throw error
-      }
-    }    
 
-  export async function createReservation(reservationData: CreateReservationData) {
-    const supabase = createBrowserSupabaseClient()
-    
-    try {
-      const { data: businessProfile } = await supabase
-        .from('business_profiles')
-        .select('*') 
-        .single()
-  
-      if (!businessProfile) {
-        throw new Error('No business profile found')
-      }
-    
-      if (!businessProfile['restaurant_name']) {
-        throw new Error('Restaurant name is required in your business profile')
-      }
-  
-      // First create or get user
-      const { data: user, error: userError } = await supabase
+    if (!businessProfile['restaurant_name']) {
+      throw new Error('Restaurant name is required in your business profile')
+    }
+
+    // First create or get user
+    const { data: user, error: userError } = await supabase
       .from('users')
       .upsert({
         email: reservationData.customer_email,
@@ -567,7 +611,7 @@ export async function updateReservationStatus(id: string, status: string) {
         })
       }
     }
-  
+
     return formattedData
 
   } catch (error: any) {
@@ -585,7 +629,7 @@ export async function updateReservationStatus(id: string, status: string) {
 
 export async function calculateReservationTimeslots(date: string) {
   const supabase = createBrowserSupabaseClient()
-  
+
   try {
     // Get the authenticated user first
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -709,7 +753,7 @@ export async function updateReservation(reservationId: string, updateData: Parti
 
 export async function cancelReservation(reservationId: string) {
   const supabase = createBrowserSupabaseClient()
-  
+
   try {
     // Get the authenticated user
     const { data: { user } } = await supabase.auth.getUser()
@@ -775,7 +819,7 @@ export async function cancelReservation(reservationId: string) {
 
 
     return true
-  }  catch (error: any) {
+  } catch (error: any) {
     console.error('Fail to cancel reservation:', {
       name: error?.name,
       message: error?.message,
@@ -791,7 +835,7 @@ export async function cancelReservation(reservationId: string) {
 // Business profiles
 export async function getBusinessProfile() {
   const supabase = createBrowserSupabaseClient()
-  
+
   try {
     const {
       data: { user },
@@ -822,6 +866,48 @@ export async function getBusinessProfile() {
   }
 }
 
+export async function getBusinessProfileWithResSettings() {
+  const supabase = createBrowserSupabaseClient()
+
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) throw new Error('No authenticated user')
+
+    const { data, error } = await supabase
+      .from('business_profiles')
+      .select(`
+        *,
+        reservation_settings (*)
+      `)
+      .eq('owner_user_id', user.id)
+      .maybeSingle()
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null
+      }
+      throw error
+    }
+
+    if (!data) return null
+
+    return {
+      ...data,
+      deposit_amount: data.deposit_amount ? Number(data.deposit_amount.toFixed(2)) * 100 : null
+    }
+  } catch (error: any) {
+    if (error?.code === 'PGRST116') {
+      return null
+    }
+    console.error('Error fetching business profile:', error)
+    throw error
+  }
+}
+
+
 function generateSlug(text: string): string {
   return String(text)
     .normalize('NFKD') // split accented characters into their base characters and diacritical marks
@@ -836,7 +922,7 @@ function generateSlug(text: string): string {
 
 export async function upsertBusinessProfile(profileData: Partial<BusinessProfile>) {
   const supabase = createBrowserSupabaseClient()
-  
+
   try {
     const {
       data: { user },
@@ -853,7 +939,7 @@ export async function upsertBusinessProfile(profileData: Partial<BusinessProfile
       .eq('user_id', user.id)
       .single()
 
-      const { data, error } = await supabase
+    const { data, error } = await supabase
       .from('business_profiles')
       .upsert({
         owner_user_id: user.id,
@@ -926,12 +1012,12 @@ export async function uploadBusinessLogo(logoFile: File) {
 
     const { data, error
       : uploadError } = await supabase.storage
-      .from('business-files')
-      .upload(fileName, logoFile, {
-        upsert: true,
-        cacheControl: '3600',
-        contentType: 'image/jpeg'
-      })
+        .from('business-files')
+        .upload(fileName, logoFile, {
+          upsert: true,
+          cacheControl: '3600',
+          contentType: 'image/jpeg'
+        })
 
     if (uploadError) throw uploadError
     return data
@@ -1032,7 +1118,7 @@ export async function getReservationSettings(): Promise<BookingSettings> {
       min_allowed_booking_advance_hours: businessProfile.min_allowed_booking_advance_hours || 3,
       max_allowed_booking_advance_hours: businessProfile.max_allowed_booking_advance_hours || 336,
       allowed_cancellation_hours: businessProfile.allowed_cancellation_hours || 3,
-      
+
       // All reservation settings
       settings: reservationSettings.map(setting => ({
         day_of_week: setting.day_of_week,
@@ -1176,14 +1262,14 @@ export async function updateWeeklySchedule(schedule: WeeklyScheduleState) {
 
     // Get table types from capacity_settings
     const tableTypes = businessProfile.capacity_settings?.table_types || []
-    
+
     // Create a map for quick lookup
     const tableTypeMap = new Map(
       tableTypes.map((type: { id: any; name: any; }) => [type.id, type.name])
     )
 
     // Convert schedule to array of records
-    const scheduleRecords = Object.entries(schedule).flatMap(([day, daySchedule]) => 
+    const scheduleRecords = Object.entries(schedule).flatMap(([day, daySchedule]) =>
       daySchedule.enabled ? daySchedule.timeSlots.map(slot => ({
         business_id: businessProfile.id,
         day_of_week: getDayNumber(day),
@@ -1338,7 +1424,7 @@ export async function getProducts() {
       .from('business_profiles')
       .select('id')
       .single()
-    
+
     if (!businessProfile) return []
 
     const { data, error } = await supabase
@@ -1493,7 +1579,7 @@ export async function uploadProductImage(imageFile: File, category?: string) {
       .from('business_profiles')
       .select('id')
       .single()
-    
+
     if (!businessProfile) throw new Error('No business profile found')
 
     // Create a unique filename
@@ -1565,7 +1651,7 @@ export async function getProductCategories(currentCategory?: string | null) {
       .from('business_profiles')
       .select('id')
       .single()
-    
+
     if (!businessProfile) return []
 
     const { data, error } = await supabase

@@ -7,8 +7,8 @@ import { PlusCircle } from 'lucide-react'
 import { CreateReservationModal } from "@/components/dashboard/create-reservation-modal"
 import { CancelReservationModal } from "@/components/dashboard/cancel-reservation-modal"
 import { EditReservationModal } from "@/components/dashboard/edit-reservation-modal"
-import { Status, Reservation, SortConfig } from "@/types"
-import { getReservations, updateReservationStatus } from "@/lib/supabase/queries"
+import { Status, Reservation, SortConfig, BusinessProfileWithReservationSettings } from "@/types"
+import { getBusinessProfileWithResSettings, getReservations, updateReservationStatus } from "@/lib/supabase/queries"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
@@ -16,7 +16,7 @@ import { format } from "date-fns"
 import { Card, CardContent } from "@/components/ui/card"
 
 const StatusBadge = ({ status }: { status: Status }) => (
-  <Badge 
+  <Badge
     className={cn(
       "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-white",
       {
@@ -28,7 +28,7 @@ const StatusBadge = ({ status }: { status: Status }) => (
       }
     )}
   >
-    {status.split('-').map(word => 
+    {status.split('-').map(word =>
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ')}
   </Badge>
@@ -41,21 +41,22 @@ export default function ReservationsPage() {
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
   const [activeReservations, setActiveReservations] = useState<Reservation[]>([])
   const [pastReservations, setPastReservations] = useState<Reservation[]>([])
+  const [restaurant, setRestaurant] = useState<BusinessProfileWithReservationSettings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [activeSortConfig, setActiveSortConfig] = useState<SortConfig>({
     key: null,
     direction: 'asc'
   });
-  
+
   const [pastSortConfig, setPastSortConfig] = useState<SortConfig>({
     key: null,
     direction: 'asc'
   });
-  
+
   const StatusCell = ({ reservationId, status }: { reservationId: string, status: Status }) => (
     <div className="flex justify-center">
-      <Select 
-        value={status} 
+      <Select
+        value={status}
         onValueChange={(value) => handleStatusChange(reservationId, value)}
       >
         <SelectTrigger className="w-[150px]">
@@ -65,8 +66,8 @@ export default function ReservationsPage() {
         </SelectTrigger>
         <SelectContent>
           {['arriving-soon', 'late', 'no-show', 'confirmed', 'seated', 'completed'].map((value) => (
-            <SelectItem 
-              key={value} 
+            <SelectItem
+              key={value}
               value={value}
               className="relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2"
             >
@@ -79,47 +80,47 @@ export default function ReservationsPage() {
   )
 
   const sortData = (data: Reservation[], sortConfig: SortConfig) => {
-      if (!sortConfig.key) return data;
-    
-      return [...data].sort((a, b) => {
-        if (sortConfig.key === 'date') {
-          const dateA = new Date(a.date).getTime();
-          const dateB = new Date(b.date).getTime();
-          return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
-        }
-    
-        const aValue = a[sortConfig.key as keyof Reservation] ?? '';
-        const bValue = b[sortConfig.key as keyof Reservation] ?? '';
-    
-        if (typeof aValue === 'string' && typeof bValue === 'string') {
-          return sortConfig.direction === 'asc' 
-            ? aValue.localeCompare(bValue)
-            : bValue.localeCompare(aValue);
-        }
-    
+    if (!sortConfig.key) return data;
+
+    return [...data].sort((a, b) => {
+      if (sortConfig.key === 'date') {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+
+      const aValue = a[sortConfig.key as keyof Reservation] ?? '';
+      const bValue = b[sortConfig.key as keyof Reservation] ?? '';
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
         return sortConfig.direction === 'asc'
-          ? (aValue < bValue ? -1 : 1)
-          : (bValue < aValue ? -1 : 1);
-      });
-    }
-    
-    const requestActiveSort = (key: string) => {
-      setActiveSortConfig((prevConfig: SortConfig) => ({
-        key,
-        direction: prevConfig.key === key && prevConfig.direction === 'asc' 
-          ? 'desc' 
-          : 'asc',
-      }));
-    }
-    
-    const requestPastSort = (key: string) => {
-      setPastSortConfig((prevConfig: SortConfig) => ({
-        key,
-        direction: prevConfig.key === key && prevConfig.direction === 'asc' 
-          ? 'desc' 
-          : 'asc',
-      }));
-    }
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return sortConfig.direction === 'asc'
+        ? (aValue < bValue ? -1 : 1)
+        : (bValue < aValue ? -1 : 1);
+    });
+  }
+
+  const requestActiveSort = (key: string) => {
+    setActiveSortConfig((prevConfig: SortConfig) => ({
+      key,
+      direction: prevConfig.key === key && prevConfig.direction === 'asc'
+        ? 'desc'
+        : 'asc',
+    }));
+  }
+
+  const requestPastSort = (key: string) => {
+    setPastSortConfig((prevConfig: SortConfig) => ({
+      key,
+      direction: prevConfig.key === key && prevConfig.direction === 'asc'
+        ? 'desc'
+        : 'asc',
+    }));
+  }
 
 
   const handleCancelReservation = (reservation: Reservation) => {
@@ -139,26 +140,26 @@ export default function ReservationsPage() {
       const reservations = await getReservations()
       const now = new Date()
       const updates: Promise<any>[] = []
-  
+
       // Process each reservation and prepare updates if needed
       const processedReservations = reservations.map(res => {
         const reservationDate = new Date(res.date);
         const [hours, minutes] = res.timeslot_start.split(':');
         const reservationTime = new Date(reservationDate);
         reservationTime.setHours(parseInt(hours), parseInt(minutes));
-        
+
         // Add 15 minutes grace period
         const graceTime = new Date(reservationTime.getTime() + 15 * 60000)
-        
+
         if (now > graceTime) {
           // If past grace time and not already marked as completed or no-show
           if (res.status !== 'completed' && res.status !== 'no-show') {
             let newStatus: Status
-            
+
             // If status is 'confirmed' or 'arriving-soon', mark as no-show
             if (['confirmed', 'arriving-soon', 'late'].includes(res.status)) {
               newStatus = 'no-show'
-            } 
+            }
             // If status is 'seated', mark as completed
             else if (['seated'].includes(res.status)) {
               newStatus = 'completed'
@@ -167,7 +168,7 @@ export default function ReservationsPage() {
             else {
               newStatus = res.status as Status
             }
-  
+
             // Queue the update
             updates.push(updateReservationStatus(res.id, newStatus))
             // Return reservation with new status
@@ -176,12 +177,12 @@ export default function ReservationsPage() {
         }
         return res
       })
-  
+
       // Execute all updates in parallel if any
       if (updates.length > 0) {
         await Promise.all(updates)
       }
-  
+
       // Filter processed reservations into active and past
       const active = processedReservations.filter(res => {
         const reservationDate = new Date(res.date);
@@ -189,7 +190,7 @@ export default function ReservationsPage() {
         reservationDate.setHours(parseInt(hours), parseInt(minutes));
         return reservationDate > now && !['completed', 'no-show'].includes(res.status);
       });
-      
+
       const past = processedReservations.filter(res => {
         const reservationDate = new Date(res.date);
         const [hours, minutes] = res.timeslot_start.split(':');
@@ -205,8 +206,8 @@ export default function ReservationsPage() {
     } finally {
       setIsLoading(false)
     }
-  }  
-  
+  }
+
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
       await updateReservationStatus(id, newStatus)
@@ -214,13 +215,33 @@ export default function ReservationsPage() {
     } catch (error) {
       console.error("Error updating reservation status:", error)
     }
-  }  
+  }
 
   useEffect(() => {
-    fetchReservations()
-    const intervalId = setInterval(fetchReservations, 60000) // Check every minute
-    return () => clearInterval(intervalId)
-  }, [])
+    const fetchBusinessProfile = async () => {
+      try {
+        const businessProfile = await getBusinessProfileWithResSettings();
+        setRestaurant(businessProfile);
+      } catch (error) {
+        console.error('Error fetching business profile:', error);
+      }
+    };
+
+    const fetchData = () => {
+      fetchReservations();
+      fetchBusinessProfile();
+    };
+
+    // Initial fetch
+    fetchData();
+
+    // Set up interval for periodic updates
+    const intervalId = setInterval(fetchData, 60000); // Check every minute
+
+    // Cleanup function
+    return () => clearInterval(intervalId);
+  }, []); // Empty dependency array since we want this to run once on mount
+
 
   return (
     <div className="space-y-8">
@@ -238,75 +259,75 @@ export default function ReservationsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-         {[
-           { key: 'customer_name', label: 'Customer Name' },
-           { key: 'customer_email', label: 'Email' },
-           { key: 'phone', label: 'Phone' },
-           { key: 'date', label: 'Date & Time' },
-           { key: 'party_size', label: 'Party Size' },
-           { key: 'status', label: 'Status' },
-           { key: 'special_requests', label: 'Special Requests' },
-           { key: 'dietary_restrictions', label: 'Dietary Restrictions' },
-           { key: 'actions', label: 'Actions' }
-         ].map(column => (
-           <TableHead
-             key={column.key}
-             className="text-center py-6 px-3 cursor-pointer hover:bg-accent/50"
-             onClick={() => requestActiveSort(column.key)}
-           >
-             <div className="flex items-center justify-center gap-2">
-               {column.label}
-               {activeSortConfig.key === column.key && (
-                  <span>{activeSortConfig.direction === 'asc' ? '🔼' : '🔽'}</span>
-                )}
-             </div>
-           </TableHead>
-         ))}
+                  {[
+                    { key: 'customer_name', label: 'Customer Name' },
+                    { key: 'customer_email', label: 'Email' },
+                    { key: 'phone', label: 'Phone' },
+                    { key: 'date', label: 'Date & Time' },
+                    { key: 'party_size', label: 'Party Size' },
+                    { key: 'status', label: 'Status' },
+                    { key: 'special_requests', label: 'Special Requests' },
+                    { key: 'dietary_restrictions', label: 'Dietary Restrictions' },
+                    { key: 'actions', label: 'Actions' }
+                  ].map(column => (
+                    <TableHead
+                      key={column.key}
+                      className="text-center py-6 px-3 cursor-pointer hover:bg-accent/50"
+                      onClick={() => requestActiveSort(column.key)}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        {column.label}
+                        {activeSortConfig.key === column.key && (
+                          <span>{activeSortConfig.direction === 'asc' ? '🔼' : '🔽'}</span>
+                        )}
+                      </div>
+                    </TableHead>
+                  ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
-         {sortData(activeReservations, activeSortConfig).map((reservation) => (
-           <TableRow key={reservation.id}>
-             <TableCell>{reservation.customer_name ?? reservation.customer_name ?? '-'}</TableCell>
-             <TableCell>{reservation.customer_email}</TableCell>
-             <TableCell>{reservation.customer_phone}</TableCell>
-             <TableCell>
-              {`${format(new Date(reservation.date), 'PPP')} ${reservation.timeslot_start} - ${reservation.timeslot_end}`}
-            </TableCell>
-             <TableCell>{reservation.party_size}</TableCell>
-             <TableCell>
-              <StatusCell 
-                  reservationId={reservation.id} 
-                  status={reservation.status} 
-                />
-             </TableCell>
-             <TableCell>{reservation.special_requests}</TableCell>
-             <TableCell>{reservation.dietary_restrictions}</TableCell>
-             <TableCell className="text-center">
-              <div className="flex justify-center gap-3">
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => handleEditReservation(reservation)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleCancelReservation(reservation)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </TableCell>
-           </TableRow>
-         ))}
+                {sortData(activeReservations, activeSortConfig).map((reservation) => (
+                  <TableRow key={reservation.id}>
+                    <TableCell>{reservation.customer_name ?? reservation.customer_name ?? '-'}</TableCell>
+                    <TableCell>{reservation.customer_email}</TableCell>
+                    <TableCell>{reservation.customer_phone}</TableCell>
+                    <TableCell>
+                      {`${format(new Date(reservation.date), 'PPP')} ${reservation.timeslot_start} - ${reservation.timeslot_end}`}
+                    </TableCell>
+                    <TableCell>{reservation.party_size}</TableCell>
+                    <TableCell>
+                      <StatusCell
+                        reservationId={reservation.id}
+                        status={reservation.status}
+                      />
+                    </TableCell>
+                    <TableCell>{reservation.special_requests}</TableCell>
+                    <TableCell>{reservation.dietary_restrictions}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex justify-center gap-3">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleEditReservation(reservation)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleCancelReservation(reservation)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
-      
+
         <Card>
           <CardContent>
             <h2 className="text-2xl font-semibold mb-4 py-6">Past Reservations</h2>
@@ -350,9 +371,9 @@ export default function ReservationsPage() {
                     </TableCell>
                     <TableCell>{reservation.party_size}</TableCell>
                     <TableCell>
-                      <StatusCell 
-                        reservationId={reservation.id} 
-                        status={reservation.status} 
+                      <StatusCell
+                        reservationId={reservation.id}
+                        status={reservation.status}
                       />
                     </TableCell>
                     <TableCell>{reservation.special_requests ?? '-'}</TableCell>
@@ -382,29 +403,33 @@ export default function ReservationsPage() {
           </CardContent>
         </Card>
 
-      <CreateReservationModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onReservationCreated={fetchReservations}
-      />
-      <CancelReservationModal 
-        isOpen={cancelModalOpen}
-        onClose={() => setCancelModalOpen(false)}
-        reservation={selectedReservation}
-        onReservationCancelled={fetchReservations}
-      />
-      {selectedReservation && editModalOpen && (
-        <EditReservationModal
-          isOpen={editModalOpen}
-          onClose={() => {
-            setEditModalOpen(false)
-            setSelectedReservation(null)
-          }}
+        {restaurant && (
+          <CreateReservationModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onReservationCreated={fetchReservations}
+            restaurant={restaurant}
+          />
+        )}
+
+        <CancelReservationModal
+          isOpen={cancelModalOpen}
+          onClose={() => setCancelModalOpen(false)}
           reservation={selectedReservation}
-          onReservationUpdated={fetchReservations}
+          onReservationCancelled={fetchReservations}
         />
-      )}
+        {selectedReservation && editModalOpen && (
+          <EditReservationModal
+            isOpen={editModalOpen}
+            onClose={() => {
+              setEditModalOpen(false)
+              setSelectedReservation(null)
+            }}
+            reservation={selectedReservation}
+            onReservationUpdated={fetchReservations}
+          />
+        )}
+      </div>
     </div>
-  </div>
   )
 }

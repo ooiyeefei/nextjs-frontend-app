@@ -48,7 +48,7 @@ export interface Reservation {
 }
 
 export interface BusinessProfile {
-  id?: string
+  id: string
   slug: string
   name: string
   cuisine?: string
@@ -75,6 +75,10 @@ export interface BusinessProfile {
   owner_user_id: string
   phone?: string | null
   website?: string | null
+}
+
+export interface BusinessProfileWithReservationSettings extends BusinessProfile {
+  reservation_settings: ReservationSetting[]
 }
 
 export interface Product {
@@ -128,6 +132,7 @@ export interface ReservationSetting {
   reservation_end_time: string
   capacity_settings: { default: number }
   is_default: boolean
+  specific_date?: Date | null
 }
 
 export interface BookingSettings {
@@ -140,35 +145,36 @@ export interface BookingSettings {
 
 // Component Props
 export interface ModalProps {
-    isOpen: boolean
-    onClose: () => void
-  }
+  isOpen: boolean
+  onClose: () => void
+}
 
 export interface ReservationsTabProps {
-    onCancelReservation: (reservation: Reservation) => void;
-    onEditReservation: (reservation: Reservation) => void;
-  }
+  onCancelReservation: (reservation: Reservation) => void;
+  onEditReservation: (reservation: Reservation) => void;
+}
 export interface CreateReservationModalProps {
-    isOpen: boolean
-    onClose: () => void
-    onSuccess?: () => Promise<void>
-    onReservationCreated?: () => Promise<void>;
-  }
+  isOpen: boolean
+  onClose: () => void
+  onSuccess?: () => Promise<void>
+  onReservationCreated?: () => Promise<void>;
+  restaurant: BusinessProfileWithReservationSettings;
+}
 
 export interface EditReservationModalProps {
-    isOpen: boolean
-    onClose: () => void
-    reservation: Reservation
-    onSuccess?: () => Promise<void>
-    onReservationUpdated?: () => Promise<void>;
+  isOpen: boolean
+  onClose: () => void
+  reservation: Reservation
+  onSuccess?: () => Promise<void>
+  onReservationUpdated?: () => Promise<void>;
 }
 
 export interface CancelReservationModalProps {
-    isOpen: boolean
-    onClose: () => void
-    reservation: Reservation | null
-    onReservationCancelled?: () => Promise<void>;
-  }
+  isOpen: boolean
+  onClose: () => void
+  reservation: Reservation | null
+  onReservationCancelled?: () => Promise<void>;
+}
 
 export interface TableAvailabilityProps {
   tableTypes: TableType[]
@@ -178,57 +184,70 @@ export interface TableAvailabilityProps {
 }
 
 
-  // API/Data Types
+// API/Data Types
 export interface TableAvailability {
-    tableTypeName: any
-    tableTypeId: string
-    quantity: number
-  }
-  
-  export interface TimeSlot {
-    reservation_start_time: string;
-    reservation_end_time: string;
-    tables: Array<{
-      tableTypeId: string;
-      quantity: number;
-    }>;
-  }
-  
-  export interface DaySchedule {
-    enabled: boolean
-    timeSlots: TimeSlot[]
-  }
-  
-  export interface DateSchedule {
-    date: Date
-    timeSlots: TimeSlot[]
-  }
-  
-  export type WeeklyScheduleState = {
-    [key in 'SUN' | 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT']: DaySchedule
-  }
-  
-  export interface CreateReservationData {
-    customer_name: string
-    customer_email: string
-    customer_phone: string
-    date: string
-    timeslot_start: string
-    timeslot_end: string
-    party_size: number
-    status: Status
-    special_requests?: string | null
-    dietary_restrictions?: string | null
-  }
-  
-  
+  tableTypeName: any
+  tableTypeId: string
+  quantity: number
+}
+
+export interface TimeSlot {
+  reservation_start_time: string;
+  reservation_end_time: string;
+  tables: Array<{
+    tableTypeId: string;
+    quantity: number;
+  }>;
+}
+
+export interface DaySchedule {
+  enabled: boolean
+  timeSlots: TimeSlot[]
+}
+
+export interface DateSchedule {
+  date: Date
+  timeSlots: TimeSlot[]
+}
+
+export type WeeklyScheduleState = {
+  [key in 'SUN' | 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT']: DaySchedule
+}
+
+export interface CreateReservationData {
+  customer_name: string
+  customer_email: string
+  customer_phone: string
+  date: string
+  timeslot_start: string
+  timeslot_end: string
+  party_size: number
+  status: Status
+  special_requests?: string | null
+  dietary_restrictions?: string | null
+}
+
+
 export interface TableType {
-    id: string
-    name: string
-    seats: number
-  }
-  
+  id: string
+  name: string
+  seats: number
+}
+
 export type SortConfig = {
-    key: string | null;  // Allow both string and null
-    direction: 'asc' | 'desc';  // Restrict direction to literal types
-  }
+  key: string | null;  // Allow both string and null
+  direction: 'asc' | 'desc';  // Restrict direction to literal types
+}
+
+export interface ReservationForTimeSlotGen {
+  date: Date;
+  timeslot_start: string;
+  timeslot_end: string;
+  party_size: number;
+}
+
+export interface TimeSlotForGen {
+  start: string;
+  end: string;
+  available: boolean;
+}
