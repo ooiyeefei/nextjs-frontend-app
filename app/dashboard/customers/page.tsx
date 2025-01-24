@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { getCustomerById, getCustomers } from "@/lib/supabase/queries"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { getCustomers } from "@/lib/supabase/queries"
+import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { ChevronRight, PlusCircle } from 'lucide-react'

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { getCustomerById } from "@/lib/supabase/queries"
 import { Reservation, Status, statusColors } from "@/types"
 import { createBrowserSupabaseClient } from '@/lib/supabase/client'
-import router from 'next/router'
+import { format } from 'date-fns'
 
 interface CustomerData {
   id: string
@@ -126,7 +126,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
               <Avatar className="h-20 w-20">
                 <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${customerData.name}`} />
                 <AvatarFallback>
-                  {customerData.name.split(' ').map((n: string) => n[0]).join('')}
+                {customerData.name[0].split(' ').map((n: string) => n[0]).join('')}
                 </AvatarFallback>
               </Avatar>
                 <div>
@@ -162,24 +162,19 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-              {customerData.reservations?.map((reservation: Reservation) => (
+                {customerData.reservations?.map((reservation: Reservation) => (
                   <div
-                    key={reservation.reservation_id}
+                    key={reservation.id}
                     className="flex items-center justify-between p-4 border rounded-lg"
                   >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">
-                          {new Date(reservation.reservation_time).toLocaleDateString('en-US', {
-                            month: 'long',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
+                          {format(new Date(reservation.date), 'PPP')}
                         </span>
-                        <span>at {new Date(reservation.reservation_time).toLocaleTimeString('en-US', {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}</span>
+                        <span>
+                          {reservation.timeslot_start} - {reservation.timeslot_end}
+                        </span>
                       </div>
                       <div className="text-sm text-muted-foreground">
                         Party of {reservation.party_size}
