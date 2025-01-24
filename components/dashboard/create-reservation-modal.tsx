@@ -17,6 +17,7 @@ import { format } from "date-fns"
 export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateReservationModalProps) {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [status, setStatus] = useState<Status>('new')
+  const [formData] = useState(new FormData());
 
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
   const [showCalendar, setShowCalendar] = useState(false)
@@ -48,13 +49,16 @@ export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateRes
       const form = event.target as HTMLFormElement;
       const formData = new FormData(form);
 
-      if (!date || !selectedTimeslot) {
+      const timeslotStart = formData.get('timeslot_start');
+      const timeslotEnd = formData.get('timeslot_end');
+
+      if (!date || !timeslotStart || !timeslotEnd) {
         toast({
           title: "Error",
           description: "Please select both date and time slot",
           variant: "destructive"
         })
-        return
+        return;
       }
 
       const partySize = parseInt(formData.get('partySize') as string, 10);
@@ -151,10 +155,10 @@ export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateRes
                 name="phone"
                 type="tel"
                 className="col-span-3"
-                placeholder="Enter phone number"
+                placeholder="Enter phone number (e.g., +65 1234 5678)"
                 required
                 aria-required="true"
-                pattern="[0-9]{8,}"
+                pattern="^[0-9\-\+\s\(\)]*$"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -200,13 +204,34 @@ export function CreateReservationModal({ isOpen, onClose, onSuccess }: CreateRes
               <Label htmlFor="time" className="text-right">
                 Time
               </Label>
-              <Input
-                id="time"
-                name="time"
-                type="time"
-                className="col-span-3 bg-white text-black border border-gray-300 rounded-md dark:bg-slate-800 dark:text-white dark:border-gray-600 [&::-webkit-calendar-picker-indicator]:dark:invert-[1]"
-                required
-            />
+              <div className="col-span-3">
+                <Select 
+                  value={selectedTimeslot || ''} 
+                  onValueChange={(value) => {
+                    setSelectedTimeslot(value);
+                    const slot = availableTimeslots.find(s => s.start === value);
+                    if (slot) {
+                      formData.set('timeslot_start', slot.start);
+                      formData.set('timeslot_end', slot.end);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a time slot" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTimeslots.map((slot, index) => (
+                      <SelectItem key={index} value={slot.start}>
+                        {`${slot.start} - ${slot.end}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <input type="hidden" name="timeslot_start" value={selectedTimeslot || ''} />
+                <input type="hidden" name="timeslot_end" value={
+                  availableTimeslots.find(s => s.start === selectedTimeslot)?.end || ''
+                } />
+              </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="partySize" className="text-right">
